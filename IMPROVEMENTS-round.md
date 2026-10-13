@@ -3,16 +3,16 @@
 Progress:
 - [x] Brainstorm ranked improvements (this file)
 - [x] Pin the ground truth: RFC 8288, RFC 8187, RFC 3986, RFC 9110, IANA registry, GitHub docs
-- [ ] Ordered parameter model: repeated `hreflang` and extension attributes kept, frozen `Link`
-- [ ] Parser on the RFC 8288 grammar: several field lines, unquoted values per Appendix B.3
-- [ ] Strict mode with `LinkError` offsets: ABNF, duplicates, relation types, star values
-- [ ] RFC 8187 extended values: decode, encode, `title*` preferred over `title`
-- [ ] RFC 3986 section 5 resolution: target and anchor against a base, strict algorithm
-- [ ] Safe builder: header injection guard, tokens, `rel` required, star values unquoted
-- [ ] Relation types: IANA names, `is_registered`, case rules, `find` and `find_all`
-- [ ] Command line: read a header or a `curl -i` dump, print JSON
-- [ ] Contracts: pinned sources, README examples, typing, installed wheel
-- [ ] Docs and packaging: README, CHANGELOG, metadata, sdist contents
+- [x] Ordered parameter model: repeated `hreflang` and extension attributes kept, frozen `Link`
+- [x] Parser on the RFC 8288 grammar: several field lines, unquoted values per Appendix B.3
+- [x] Strict mode with `LinkError` offsets: ABNF, duplicates, relation types, star values
+- [x] RFC 8187 extended values: decode, encode, `title*` preferred over `title`
+- [x] RFC 3986 section 5 resolution: target and anchor against a base, strict algorithm
+- [x] Safe builder: header injection guard, tokens, `rel` required, star values unquoted
+- [x] Relation types: IANA names, `is_registered`, case rules, `find` and `find_all`
+- [x] Command line: read a header or a `curl -i` dump, print JSON
+- [x] Contracts: pinned sources, README examples, typing, installed wheel
+- [x] Docs and packaging: README, CHANGELOG, metadata, sdist contents
 - [ ] Gates: ruff format, ruff check, mypy --strict, pytest
 - [ ] Mutation run: removing guarded logic makes the suite fail
 - [ ] Independent review findings fixed with regression tests
