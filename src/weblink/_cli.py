@@ -51,7 +51,7 @@ def field_values(text: str) -> list[str]:
     fields: list[list[str]] = []
     folding = False
     for line in text.splitlines():
-        if folding and line[:1] in (" ", "	"):
+        if folding and line[:1] in (" ", "\t"):
             fields[-1].append(line.strip())
             continue
         match = _FIELD.match(line)
