@@ -151,5 +151,3 @@ fails on the code before the fix (`tests/test_review_fixes.py` and the updated t
   lines split only at LF, not at Unicode line separators.
 - Docs no longer claim that strict mode rejects everything outside the ABNF or that the
   parser runs Appendix B unchanged: the choices it makes are written down.
-- A planning-file fragment from the authoring process was removed from the branch
-  history.
