@@ -13,9 +13,9 @@ Progress:
 - [x] Command line: read a header or a `curl -i` dump, print JSON
 - [x] Contracts: pinned sources, README examples, typing, installed wheel
 - [x] Docs and packaging: README, CHANGELOG, metadata, sdist contents
-- [ ] Gates: ruff format, ruff check, mypy --strict, pytest
-- [ ] Mutation run: removing guarded logic makes the suite fail
-- [ ] Independent review findings fixed with regression tests
+- [x] Gates: ruff format, ruff check, mypy --strict, pytest
+- [x] Mutation run: removing guarded logic makes the suite fail
+- [x] Independent review findings fixed with regression tests
 - [ ] Pull request opened, guard clean
 
 ## Starting point
@@ -112,3 +112,44 @@ sources below:
 - `hreflang` and `media` value validation (BCP 47, media queries): large grammars of their
   own; they are passed through.
 - IRI to URI conversion (RFC 3987): targets are kept as written.
+
+## Verification
+
+- Gates on CPython 3.13.2 (this PC) and 3.14.6 (a second Windows machine, fresh clone):
+  `ruff format --check .`, `ruff check .`, `mypy --strict src` (and `src tests`) and
+  `pytest`. With `WEBLINK_E2E=1` the installed-wheel test builds the wheel and sdist,
+  checks their contents (no planning notes, no fetched files, the manifest, the fetch
+  script and the entry point present), installs the wheel in a fresh venv and drives the
+  API, the `weblink` script and `python -m weblink` from an empty folder. Without the
+  fetched files their tests skip and the rest of the suite passes.
+- Guarded logic was removed one piece at a time (98 mutations). The first run left three
+  alive: the quote and backslash exclusion in the qdtext helper (only reachable through
+  the helper itself, now compared with the RFC 9110 set directly), the length check of a
+  percent escape (no test had a truncated `%` at the end), and bare `.` or `..` paths
+  (only reached through a reference with a scheme). Tests now cover each; the rerun
+  leaves none alive.
+- A seeded random round trip builds 3000 sets of links and reads each back with the
+  strict and the lenient parser.
+
+## Review fixes
+
+An independent review attacked the branch; each finding below is fixed with a test that
+fails on the code before the fix (`tests/test_review_fixes.py` and the updated tests):
+
+- Extension relation types are compared case-insensitively too (RFC 8288 section
+  2.1.2); only ASCII letters fold, so a look-alike such as the Kelvin sign never matches.
+- Strict mode holds unregistered relation types to LOALPHA (erratum 5319) and checks the
+  structure of targets and anchors (scheme, a single `#`, brackets only around an IP
+  literal, a numeric port, complete percent escapes), not just their characters.
+- Dot-segment removal ran in quadratic time (a 480 KB `../` path took seconds); it now
+  walks the path once.
+- The command line writes ASCII JSON, so a console or pipe without a character's
+  encoding cannot crash it, and reads standard input as ISO-8859-1 octets, so obs-text
+  bytes cannot either.
+- In a response head only `Link` fields count (a head without one gives no links), the
+  body after the blank line is ignored, the final response of a redirect chain wins, and
+  lines split only at LF, not at Unicode line separators.
+- Docs no longer claim that strict mode rejects everything outside the ABNF or that the
+  parser runs Appendix B unchanged: the choices it makes are written down.
+- A planning-file fragment from the authoring process was removed from the branch
+  history.
