@@ -1,9 +1,10 @@
-"""Build a Link header value from a list of links."""
+"""Build a Link header value from links, refusing what the header cannot carry."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable
 
+from ._check import check_link
 from ._errors import LinkError
 from ._model import Link
 
@@ -11,21 +12,31 @@ from ._model import Link
 def build(links: Iterable[Link]) -> str:
     """Serialise links into an RFC 8288 ``Link`` header value.
 
-    Each link becomes ``<uri>; name="value"`` and the parts are joined with a
-    comma. Parameter values are always quoted and their quotes escaped, so the
-    result parses back to the same links.
+    Each link becomes ``<uri>; name="value"`` and the links are joined with ``", "``.
+    Values are quoted and escaped; RFC 8187 starred values (``title*``) are written bare,
+    as RFC 8187 requires. Raises :class:`LinkError` for a link :func:`parse` would reject
+    in strict mode (no ``rel``, a target that is not a URI reference, a name that is not
+    a token, a starred value that is not an ext-value) and for values holding control
+    characters or non-ASCII text, which would break or inject header lines: encode such
+    text with :func:`encode_ext_value` and send it as ``title*``.
     """
     return ", ".join(_build_one(link) for link in links)
 
 
 def _build_one(link: Link) -> str:
-    if not link.uri:
-        raise LinkError("a link needs a non-empty uri")
+    if not isinstance(link, Link):
+        raise TypeError(f"build takes Link objects, not {type(link).__name__}")
+    check_link(link)
     parts = [f"<{link.uri}>"]
-    parts.extend(_build_param(name, value) for name, value in link.params.items())
+    for name, value in link.pairs:
+        if name.endswith("*"):
+            parts.append(f"{name}={value}")
+            continue
+        for c in value:
+            if not (c == "\t" or " " <= c <= "~"):
+                raise LinkError(
+                    f"{name} value has {c!r}; send non-ASCII text as {name}* with encode_ext_value"
+                )
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        parts.append(f'{name}="{escaped}"')
     return "; ".join(parts)
-
-
-def _build_param(name: str, value: str) -> str:
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-    return f'{name}="{escaped}"'

@@ -1,3 +1,5 @@
+import pytest
+
 from weblink import Link, parse
 
 
@@ -82,3 +84,87 @@ def test_unterminated_uri_does_not_crash() -> None:
 def test_unterminated_quote_does_not_crash() -> None:
     links = parse('<https://example.com/>; title="unterminated')
     assert links[0].title == "unterminated"
+
+
+def test_several_header_lines_are_read_in_order() -> None:
+    links = parse(['<https://a.test/1>; rel="next"', '<https://a.test/2>; rel="last"'])
+    assert [link.uri for link in links] == ["https://a.test/1", "https://a.test/2"]
+
+
+def test_a_quote_never_continues_into_the_next_line() -> None:
+    links = parse(['<https://a.test/1>; title="open', '<https://a.test/2>; rel="last"'])
+    assert [link.uri for link in links] == ["https://a.test/1", "https://a.test/2"]
+
+
+def test_bytes_are_refused_with_a_clear_message() -> None:
+    with pytest.raises(TypeError, match="bytes"):
+        parse(b'<https://a.test/>; rel="next"')  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="lines must be str"):
+        parse([b"<https://a.test/>"])  # type: ignore[list-item]
+
+
+def test_an_unquoted_value_runs_to_the_next_semicolon() -> None:
+    # RFC 8288 Appendix B.3 step 7.4: a bare value ends at ";" or ",", not at a space.
+    (link,) = parse("<https://a.test/>; rel=next prev ; type=text/html")
+    assert link.rels == ("next", "prev")
+    assert link.type == "text/html"
+
+
+def test_repeated_hreflang_values_are_all_kept() -> None:
+    (link,) = parse('<https://a.test/>; rel="alternate"; hreflang=en; hreflang=fr')
+    assert link.hreflang == "en"
+    assert link.hreflangs == ("en", "fr")
+    assert link.pairs == (("rel", "alternate"), ("hreflang", "en"), ("hreflang", "fr"))
+
+
+def test_a_parameter_without_a_value_is_empty() -> None:
+    (link,) = parse("<https://a.test/>; rel=next; crossorigin")
+    assert link.params == {"rel": "next", "crossorigin": ""}
+
+
+def test_empty_parameter_names_are_dropped() -> None:
+    (link,) = parse("<https://a.test/>; ; =x; rel=next")
+    assert link.pairs == (("rel", "next"),)
+
+
+def test_whitespace_around_the_equals_sign_is_allowed() -> None:
+    (link,) = parse('<https://a.test/> ; rel = "next" ; title =x')
+    assert link.params == {"rel": "next", "title": "x"}
+
+
+def test_junk_after_a_value_keeps_the_link_and_the_next_one() -> None:
+    links = parse('<https://a.test/1>; rel="next" junk; x=1, <https://a.test/2>; rel="last"')
+    assert links == [
+        Link("https://a.test/1", {"rel": "next"}),
+        Link("https://a.test/2", {"rel": "last"}),
+    ]
+
+
+def test_an_unclosed_quote_in_junk_does_not_hide_the_next_link() -> None:
+    links = parse('junk"here, <https://a.test/2>; rel="last"')
+    assert links == [Link("https://a.test/2", {"rel": "last"})]
+
+
+def test_an_unclosed_bracket_in_junk_does_not_hide_the_next_link() -> None:
+    links = parse('junk<here, <https://a.test/2>; rel="last"')
+    assert links == [Link("https://a.test/2", {"rel": "last"})]
+
+
+def test_junk_with_a_quoted_comma_still_reaches_the_next_link() -> None:
+    links = parse('junk "a, b" more, <https://a.test/2>; rel="last"')
+    assert links == [Link("https://a.test/2", {"rel": "last"})]
+
+
+def test_a_comma_inside_the_target_does_not_split() -> None:
+    (link,) = parse("<https://a.test/a,b>; rel=next")
+    assert link.uri == "https://a.test/a,b"
+
+
+def test_a_backslash_at_the_end_of_an_unclosed_quote_is_dropped() -> None:
+    (link,) = parse('<https://a.test/>; title="abc\\')
+    assert link.title == "abc"
+
+
+def test_folded_lines_and_tabs_are_tolerated() -> None:
+    (link,) = parse('<https://a.test/>;\r\n\trel="next";\ttitle="t"')
+    assert link.params == {"rel": "next", "title": "t"}

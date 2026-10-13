@@ -4,7 +4,20 @@ import weblink
 
 # The public API. Add every exported name here as the library grows; this list is the
 # contract and the test below fails if the module and this list disagree.
-PUBLIC_API: list[str] = ["Link", "LinkError", "build", "parse"]
+PUBLIC_API: list[str] = [
+    "REGISTERED_RELATIONS",
+    "ExtValue",
+    "Link",
+    "LinkError",
+    "build",
+    "decode_ext_value",
+    "encode_ext_value",
+    "find",
+    "find_all",
+    "is_registered",
+    "parse",
+    "resolve_uri",
+]
 
 
 def test_all_lists_exactly_the_public_api() -> None:

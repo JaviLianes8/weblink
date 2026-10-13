@@ -1,117 +1,147 @@
-"""Parse a Link header into a list of links, tolerant of malformed input."""
+"""Parse Link header lines into links, leniently or against the RFC 8288 grammar."""
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
+from ._chars import LENIENT_WS, OWS, is_qdtext, is_quoted_pair_char, is_token
+from ._check import check_link
+from ._errors import LinkError
 from ._model import Link
 
-_WHITESPACE = " \t\r\n"
-_SEPARATORS = _WHITESPACE + ","
-_TOKEN_STOP = set(_WHITESPACE + ';,="')
+# A parameter name ends at whitespace, "=", ";" or "," (RFC 8288 Appendix B.3 step 5).
+_NAME_STOP = frozenset(LENIENT_WS + "=;,")
 
 
-def parse(header: str) -> list[Link]:
-    """Parse an RFC 8288 ``Link`` header value into a list of :class:`Link`.
+def parse(header: str | Iterable[str], *, strict: bool = False) -> list[Link]:
+    """Parse ``Link`` header field values into a list of :class:`Link`.
 
-    Commas inside quoted parameter values and inside angle bracketed URIs do not
-    split links. Segments that cannot be read are skipped rather than raising.
+    ``header`` is one field value or an iterable of them (one per header line); a list
+    never continues across lines. By default parsing is tolerant: a link that cannot be
+    read is skipped up to the next comma, so it does not hide the links after it. An
+    unclosed quoted value runs to the end of its line, as in RFC 8288 Appendix B.4.
+
+    With ``strict=True`` input outside the RFC 8288 grammar raises :class:`LinkError`
+    (a registered relation type is accepted in any case), as do a missing or repeated
+    ``rel``, a repeated ``media``, ``title``, ``title*`` or ``type``, relation types that
+    are neither registered nor ``reg-rel-type`` nor absolute URIs, targets and anchors
+    that are not URI references, and starred values that are not RFC 8187 ext-values.
+    Its ``position`` is the offset in the failing line.
     """
+    if isinstance(header, (bytes, bytearray)):
+        raise TypeError("header must be str or an iterable of str, not bytes; decode it first")
+    lines = [header] if isinstance(header, str) else list(header)
     links: list[Link] = []
-    i, n = 0, len(header)
-    while i < n:
-        i = _skip(header, i, _SEPARATORS)
-        if i >= n:
-            break
-        if header[i] != "<":
-            i = _skip_to_next_link(header, i)
-            continue
-        uri, i = _read_uri(header, i)
-        if uri is None:
-            break
-        params, i = _read_params(header, i)
-        links.append(Link(uri, params))
+    for line in lines:
+        if not isinstance(line, str):
+            raise TypeError(f"header lines must be str, not {type(line).__name__}")
+        links.extend(_Line(line, strict).links())
     return links
 
 
-def _read_uri(s: str, i: int) -> tuple[str | None, int]:
-    end = s.find(">", i + 1)
-    if end == -1:
-        return None, len(s)
-    return s[i + 1 : end], end + 1
+class _Line:
+    def __init__(self, text: str, strict: bool) -> None:
+        self.s = text
+        self.strict = strict
+        self.ws = OWS if strict else LENIENT_WS
 
+    def fail(self, message: str, position: int) -> None:
+        if self.strict:
+            raise LinkError(message, position)
 
-def _read_params(s: str, i: int) -> tuple[dict[str, str], int]:
-    params: dict[str, str] = {}
-    n = len(s)
-    while i < n:
-        i = _skip(s, i, _WHITESPACE)
-        if i >= n or s[i] == ",":
-            break
-        if s[i] != ";":
-            i = _skip_to_next_link(s, i)
-            break
-        i = _skip(s, i + 1, _WHITESPACE)
-        name, i = _read_token(s, i)
-        if not name:
-            continue
-        i = _skip(s, i, _WHITESPACE)
-        if i < n and s[i] == "=":
-            value, i = _read_value(s, _skip(s, i + 1, _WHITESPACE))
-        else:
-            value = ""
-        key = name.lower()
-        if key not in params:
-            params[key] = value
-    return params, i
-
-
-def _read_value(s: str, i: int) -> tuple[str, int]:
-    if i < len(s) and s[i] == '"':
-        return _read_quoted(s, i)
-    return _read_token(s, i)
-
-
-def _read_token(s: str, i: int) -> tuple[str, int]:
-    start, n = i, len(s)
-    while i < n and s[i] not in _TOKEN_STOP:
-        i += 1
-    return s[start:i], i
-
-
-def _read_quoted(s: str, i: int) -> tuple[str, int]:
-    i += 1
-    n = len(s)
-    out: list[str] = []
-    while i < n:
-        c = s[i]
-        if c == "\\" and i + 1 < n:
-            out.append(s[i + 1])
-            i += 2
-            continue
-        if c == '"':
-            return "".join(out), i + 1
-        out.append(c)
-        i += 1
-    return "".join(out), i
-
-
-def _skip(s: str, i: int, chars: str) -> int:
-    n = len(s)
-    while i < n and s[i] in chars:
-        i += 1
-    return i
-
-
-def _skip_to_next_link(s: str, i: int) -> int:
-    n = len(s)
-    while i < n:
-        c = s[i]
-        if c == '"':
-            _, i = _read_quoted(s, i)
-        elif c == "<":
-            end = s.find(">", i + 1)
-            i = n if end == -1 else end + 1
-        elif c == ",":
-            return i
-        else:
+    def skip(self, i: int, chars: str) -> int:
+        while i < len(self.s) and self.s[i] in chars:
             i += 1
-    return i
+        return i
+
+    def links(self) -> list[Link]:
+        s, i = self.s, 0
+        out: list[Link] = []
+        while True:
+            i = self.skip(i, self.ws + ",")
+            if i >= len(s):
+                return out
+            start = i
+            if s[i] != "<":
+                self.fail("expected '<' to start a link", i)
+                i = self.resync(i)
+                continue
+            end = s.find(">", i + 1)
+            if end == -1:
+                self.fail("unclosed '<'", i)
+                return out
+            pairs, i = self.params(end + 1)
+            link = Link(s[start + 1 : end], pairs)
+            if self.strict:
+                try:
+                    check_link(link)
+                except LinkError as error:
+                    raise LinkError(error.message, start) from None
+            out.append(link)
+
+    def params(self, i: int) -> tuple[list[tuple[str, str]], int]:
+        s = self.s
+        pairs: list[tuple[str, str]] = []
+        while True:
+            i = self.skip(i, self.ws)
+            if i >= len(s) or s[i] == ",":
+                return pairs, i
+            if s[i] != ";":
+                self.fail("expected ';' or ','", i)
+                return pairs, self.resync(i)
+            i = self.skip(i + 1, self.ws)
+            start = i
+            while i < len(s) and s[i] not in _NAME_STOP:
+                i += 1
+            name = s[start:i]
+            if not is_token(name):
+                self.fail("expected a parameter name", start)
+            i = self.skip(i, self.ws)
+            value = ""
+            if i < len(s) and s[i] == "=":
+                i = self.skip(i + 1, self.ws)
+                if i < len(s) and s[i] == '"':
+                    if name.endswith("*"):
+                        self.fail("an RFC 8187 value cannot be quoted", i)
+                    value, i = self.quoted(i)
+                else:
+                    value, i = self.bare(i)
+            if name:
+                pairs.append((name.lower(), value))
+
+    def bare(self, i: int) -> tuple[str, int]:
+        start = i
+        while i < len(self.s) and self.s[i] not in ";,":
+            i += 1
+        value = self.s[start:i].rstrip(self.ws)
+        if not is_token(value):
+            self.fail("expected a token or a quoted string", start)
+        return value, i
+
+    def quoted(self, i: int) -> tuple[str, int]:
+        s, start, out = self.s, i, []
+        i += 1
+        while i < len(s):
+            c = s[i]
+            if c == "\\":
+                if i + 1 >= len(s):
+                    break
+                if not is_quoted_pair_char(s[i + 1]):
+                    self.fail("invalid character after a backslash", i + 1)
+                out.append(s[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                return "".join(out), i + 1
+            if not is_qdtext(c):
+                self.fail("invalid character in a quoted string", i)
+            out.append(c)
+            i += 1
+        self.fail("unclosed quoted string", start)
+        return "".join(out), len(s)
+
+    def resync(self, i: int) -> int:
+        # Text outside the grammar has no quoting: honouring a stray quote or bracket there
+        # would let it swallow the well-formed links that follow, so the next comma wins.
+        end = self.s.find(",", i)
+        return len(self.s) if end == -1 else end
