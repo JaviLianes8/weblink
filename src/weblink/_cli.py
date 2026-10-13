@@ -13,6 +13,8 @@ from ._errors import LinkError
 from ._parse import parse
 
 _FIELD = re.compile(r"link[ \t]*:(.*)", re.IGNORECASE)
+# A response head starts with a status line or a header field name and a colon.
+_HEAD = re.compile(r"HTTP/|[!#$%&'*+.^_`|~0-9A-Za-z-]+[ \t]*:")
 
 
 def main(
@@ -29,7 +31,14 @@ def main(
     parser.add_argument("--strict", action="store_true", help="reject input outside RFC 8288")
     args = parser.parse_args(argv)
     out = stdout or sys.stdout
-    text = args.header if args.header is not None else (stdin or sys.stdin).read()
+    if args.header is not None:
+        text = args.header
+    elif stdin is not None:
+        text = stdin.read()
+    else:
+        # HTTP field values are octets; ISO-8859-1 maps each one to a character, so
+        # obs-text bytes never make the command fail before parsing starts.
+        text = sys.stdin.buffer.read().decode("latin-1")
     try:
         links = parse(field_values(text), strict=args.strict)
         if args.base is not None:
@@ -38,26 +47,38 @@ def main(
         print(f"weblink: {error}", file=sys.stderr)
         return 2
     rows = [{"uri": link.uri, "rels": list(link.rels), "params": link.pairs} for link in links]
-    json.dump(rows, out, indent=2, ensure_ascii=False)
+    # ASCII output cannot fail on a console or pipe whose encoding lacks a character.
+    json.dump(rows, out, indent=2, ensure_ascii=True)
     out.write("\n")
     return 0
 
 
 def field_values(text: str) -> list[str]:
-    """The Link field values of a response head, or the text itself when it has none.
+    """The Link field values of a response head, or the text as one value when it is not one.
 
-    Lines that start with whitespace continue the previous field (obsolete line folding).
+    In a head, lines that start with whitespace continue the previous field (obsolete line
+    folding), a blank line ends the head, and a later status line starts a new response
+    whose fields replace the earlier ones, so `curl -sIL` reports the final response.
     """
+    lines = [line.removesuffix("\r") for line in text.split("\n")]
+    first = next((line for line in lines if line.strip()), "")
+    if not _HEAD.match(first):
+        return [" ".join(line.strip() for line in lines if line.strip())]
     fields: list[list[str]] = []
-    folding = False
-    for line in text.splitlines():
-        if folding and line[:1] in (" ", "\t"):
-            fields[-1].append(line.strip())
+    folding, in_head = False, True
+    for line in lines:
+        if line.startswith("HTTP/"):
+            fields, folding, in_head = [], False, True
             continue
-        match = _FIELD.match(line)
-        folding = match is not None
-        if match is not None:
-            fields.append([match.group(1).strip()])
-    if not fields:
-        return [" ".join(line.strip() for line in text.splitlines())]
+        if not in_head:
+            continue
+        if not line.strip():
+            in_head = False
+        elif folding and line[:1] in (" ", "\t") and fields:
+            fields[-1].append(line.strip())
+        else:
+            match = _FIELD.match(line)
+            folding = match is not None
+            if match is not None:
+                fields.append([match.group(1).strip()])
     return [" ".join(part for part in parts if part) for parts in fields]

@@ -2,13 +2,8 @@
 
 from __future__ import annotations
 
-import re
-
-from ._chars import has_scheme
+from ._chars import COMPONENTS, has_scheme
 from ._errors import LinkError
-
-# RFC 3986 Appendix B, with groups for the five components.
-_COMPONENTS = re.compile(r"(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?", re.S)
 
 _Parts = tuple[str | None, str | None, str, str | None, str | None]
 
@@ -39,7 +34,7 @@ def resolve_uri(reference: str, base: str) -> str:
 
 
 def _split(uri: str) -> _Parts:
-    match = _COMPONENTS.fullmatch(uri)
+    match = COMPONENTS.fullmatch(uri)
     assert match is not None  # every group is optional, so any string matches
     scheme, authority, path, query, fragment = match.groups()
     return scheme, authority, path, query, fragment
@@ -52,25 +47,29 @@ def _merge(base_authority: str | None, base_path: str, path: str) -> str:
 
 
 def _remove_dot_segments(path: str) -> str:
+    # Section 5.2.4 with the input buffer held as ``lead + path[i:]`` instead of being
+    # re-sliced at every step, so a long path costs linear time.
     out: list[str] = []
-    while path:
-        if path.startswith("../"):
-            path = path[3:]
-        elif path.startswith("./"):
-            path = path[2:]
-        elif path.startswith("/./") or path == "/.":
-            path = "/" + path[3:]
-        elif path.startswith("/../") or path == "/..":
-            path = "/" + path[4:]
+    lead, i, n = "", 0, len(path)
+    while lead or i < n:
+        head = lead + path[i : i + 4]
+        size = len(lead) + n - i
+        if head.startswith(("../", "./")):
+            lead, i = "", i + len(head.split("/", 1)[0]) + 1 - len(lead)
+        elif head.startswith("/./") or (size == 2 and head == "/."):
+            lead, i = "/", i + min(size, 3) - len(lead)
+        elif head.startswith("/../") or (size == 3 and head == "/.."):
+            lead, i = "/", i + min(size, 4) - len(lead)
             if out:
                 out.pop()
-        elif path in (".", ".."):
-            path = ""
+        elif size <= 2 and head in (".", ".."):
+            lead, i = "", n
         else:
-            end = path.find("/", 1)
-            end = len(path) if end == -1 else end
-            out.append(path[:end])
-            path = path[end:]
+            start = i + 1 if not lead and path[i] == "/" else i
+            end = path.find("/", start)
+            end = n if end == -1 else end
+            out.append(lead + path[i:end])
+            lead, i = "", end
     return "".join(out)
 
 

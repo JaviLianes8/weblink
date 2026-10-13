@@ -145,15 +145,19 @@ REGISTERED_RELATIONS: frozenset[str] = frozenset(
 )
 
 
+_ASCII_LOWER = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
+
+
 def is_registered(relation_type: str) -> bool:
     """True when ``relation_type`` is in the IANA registry, compared case-insensitively."""
-    return relation_type.lower() in REGISTERED_RELATIONS
+    return normalise_rel(relation_type) in REGISTERED_RELATIONS
 
 
 def normalise_rel(relation_type: str) -> str:
-    """Lower-case a registered-style relation type and keep an extension URI as written.
+    """Lower-case the ASCII letters of a relation type, the form used to compare it.
 
-    RFC 8288 section 2.1.1 compares registered types case-insensitively; extension types
-    are URIs (they hold a colon), compared as URIs, so their case is kept.
+    RFC 8288 compares registered types (section 2.1.1) and extension URIs (section 2.1.2)
+    case-insensitively, character by character. Only ASCII letters fold, so a look-alike
+    such as the Kelvin sign never matches a "k".
     """
-    return relation_type if ":" in relation_type else relation_type.lower()
+    return relation_type.translate(_ASCII_LOWER)

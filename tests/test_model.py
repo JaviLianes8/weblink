@@ -70,12 +70,19 @@ def test_accessors_read_their_parameters() -> None:
     assert empty.rels == () and empty.hreflangs == ()
 
 
-def test_registered_relation_types_compare_case_insensitively() -> None:
+def test_relation_types_compare_case_insensitively() -> None:
+    # RFC 8288 sections 2.1.1 and 2.1.2: registered names and extension URIs alike.
     (link,) = parse('</a>; rel="Next PREV https://Example.net/Rel"')
-    assert link.rels == ("next", "prev", "https://Example.net/Rel")
+    assert link.rel == "Next PREV https://Example.net/Rel"
+    assert link.rels == ("next", "prev", "https://example.net/rel")
     assert link.has_rel("NEXT") and link.has_rel("prev")
-    assert link.has_rel("https://Example.net/Rel")
-    assert not link.has_rel("https://example.net/rel")
+    assert link.has_rel("https://example.net/rel") and link.has_rel("HTTPS://EXAMPLE.NET/REL")
+
+
+def test_only_ascii_letters_fold() -> None:
+    (link,) = parse('</a>; rel="bookmark"')
+    assert not link.has_rel("bookmar\u212a")
+    assert not is_registered("bookmar\u212a")
 
 
 def test_find_picks_links_by_relation_type() -> None:

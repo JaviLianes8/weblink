@@ -80,7 +80,7 @@ sources below:
    trimmed, one header line or a list of lines, the lenient resync at the next comma kept
    so one broken link never hides the next. `bytes` gets a clear `TypeError`.
 3. **Strict mode.** `parse(h, strict=True)` raises `LinkError` with the offset for
-   anything outside the ABNF, a missing or repeated `rel`, repeated `media`, `title`,
+   input outside the ABNF, a missing or repeated `rel`, repeated `media`, `title`,
    `title*` or `type`, relation types that are neither reg-rel-type, registered nor
    absolute URIs, and malformed or quoted star values.
 4. **RFC 8187.** `decode_ext_value` (UTF-8 and ISO-8859-1, language kept) and
@@ -92,7 +92,8 @@ sources below:
    URIs with `<`, `>` or whitespace, names that are not tokens, a missing `rel`, and star
    values that are not ext-values; star values are written unquoted.
 7. **Relation types.** `REGISTERED_RELATIONS`, `is_registered`, `rels` lower-cases
-   registered names and keeps extension URIs as written, `find` and `find_all`.
+   ASCII letters of every type (section 2.1.2 compares extension URIs case-insensitively too),
+   `find` and `find_all`.
 8. **Command line.** `weblink` reads a header value or a whole `curl -i` dump and prints
    the links as JSON, with `--base` and `--strict`. Debugging pagination from a shell is
    the one place a parser is needed without Python code around it.

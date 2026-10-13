@@ -21,11 +21,12 @@ def parse(header: str | Iterable[str], *, strict: bool = False) -> list[Link]:
     read is skipped up to the next comma, so it does not hide the links after it. An
     unclosed quoted value runs to the end of its line, as in RFC 8288 Appendix B.4.
 
-    With ``strict=True`` anything outside the RFC 8288 grammar raises
-    :class:`LinkError`, as do a missing or repeated ``rel``, a repeated ``media``,
-    ``title``, ``title*`` or ``type``, relation types that are neither registered
-    nor ``reg-rel-type`` nor absolute URIs, and starred values that are not valid
-    RFC 8187 ext-values. Its ``position`` is the offset in the failing line.
+    With ``strict=True`` input outside the RFC 8288 grammar raises :class:`LinkError`
+    (a registered relation type is accepted in any case), as do a missing or repeated
+    ``rel``, a repeated ``media``, ``title``, ``title*`` or ``type``, relation types that
+    are neither registered nor ``reg-rel-type`` nor absolute URIs, targets and anchors
+    that are not URI references, and starred values that are not RFC 8187 ext-values.
+    Its ``position`` is the offset in the failing line.
     """
     if isinstance(header, (bytes, bytearray)):
         raise TypeError("header must be str or an iterable of str, not bytes; decode it first")

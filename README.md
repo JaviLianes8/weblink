@@ -29,8 +29,8 @@ print([link.rel for link in links])
 
 Several header lines go in as a list, and each link keeps every parameter in order.
 Accessors cover the parameters RFC 8288 defines; `title` decodes `title*` when the
-server sent one, and relation types compare the way the RFC says (registered names
-ignore case, extension URIs do not):
+server sent one, and relation types compare case-insensitively (ASCII letters only),
+as RFC 8288 requires for registered names and extension URIs alike:
 
 ```python
 from weblink import parse
@@ -97,7 +97,9 @@ print(build([Link("/b", [("rel", "alternate"), ("hreflang", "en"), ("hreflang", 
 
 ## Command line
 
-`weblink` prints the links of a header value, or of a whole response head, as JSON:
+`weblink` prints the links of a header value, or of a whole response head, as ASCII
+JSON. In a head only `Link` fields count, the body after the blank line is ignored, and
+after redirects (`curl -sIL`) the final response wins:
 
 ```
 curl -sI "https://api.github.com/repos/python/cpython/tags?per_page=5" | weblink
@@ -123,8 +125,14 @@ weblink --base https://example.com/a/ '<../b>; rel="up"'
 ## Standards
 
 - RFC 8288 (Web Linking): the field grammar, the duplicate rules for `rel`, `media`,
-  `title`, `title*` and `type`, relation types (registered or absolute URIs), and the
-  Appendix B parsing algorithm with verified erratum 5878.
+  `title`, `title*` and `type`, relation types (registered or absolute URIs). Lenient
+  parsing follows the Appendix B algorithm, except that unreadable text is skipped up
+  to the next comma instead of ending the parse; starred values are decoded by the
+  accessors, so `pairs` keeps them as sent.
+- Strict mode follows the ABNF with one documented choice: a registered relation type
+  is accepted in any case (`rel=Next`), since section 2.1.1 compares them that way.
+  Targets and anchors get a structural RFC 3986 URI-reference check; the inside of an
+  IP literal is not checked further.
 - RFC 8187: UTF-8 and ISO-8859-1 ext-values, never quoted when built.
 - RFC 3986 section 5: every example of section 5.4 is part of the test suite.
 - The IANA "Link Relation Types" registry as of 2026-06-12. One registered name,

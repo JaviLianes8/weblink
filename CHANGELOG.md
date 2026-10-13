@@ -11,7 +11,8 @@ All notable changes to this project are documented here. The format follows
 ### Added
 
 - `parse(..., strict=True)` checks the RFC 8288 grammar and raises `LinkError` with the
-  offset: anything outside the ABNF, a missing or repeated `rel`, a repeated `media`,
+  offset: input outside the ABNF (registered relation types are accepted in any case),
+  targets and anchors that are not structurally URI references, a missing or repeated `rel`, a repeated `media`,
   `title`, `title*` or `type`, malformed relation types, invalid starred values.
 - `parse` takes a list of header lines; a quoted string never runs into the next line.
 - RFC 8187 support: `decode_ext_value`, `encode_ext_value` and `ExtValue`; `Link.title`
@@ -22,14 +23,16 @@ All notable changes to this project are documented here. The format follows
 - `Link.has_rel`, `find` and `find_all`; `REGISTERED_RELATIONS` and `is_registered` from
   the IANA registry; `Link.rev`, `Link.anchor` and `Link.media`.
 - The `weblink` command (also `python -m weblink`) prints the links of a header value or
-  of a response head as JSON, with `--base` and `--strict`.
+  of a response head as ASCII JSON, with `--base` and `--strict`. Standard input is read
+  as ISO-8859-1 octets; in a head only `Link` fields of the final response count.
 
 ### Changed
 
 - `Link` is immutable and hashable and keeps every parameter in order. `params` is now a
   new first-wins dict on each access, so changing it no longer changes the link.
   Parameter names are lower-cased on construction.
-- `rels` lower-cases registered relation types; extension URIs are kept as written.
+- `rels` lower-cases the ASCII letters of every relation type, and relation types compare
+  case-insensitively, extension URIs included (RFC 8288 section 2.1.2).
 - An unquoted value runs to the next `;` or `,` (RFC 8288 Appendix B.3) instead of
   stopping at a space.
 - Text that cannot be read is skipped up to the next comma; quotes and brackets in it are

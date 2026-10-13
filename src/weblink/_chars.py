@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import string
 
 # RFC 9110 section 5.6.2.
@@ -15,6 +16,8 @@ SCHEME_CHARS = frozenset(string.ascii_letters + string.digits + "+-.")
 # RFC 8187 section 3.2.1.
 ATTR_CHARS = frozenset(string.ascii_letters + string.digits + "!#$&+-.^_`|~")
 HEXDIGITS = frozenset(string.hexdigits)
+# RFC 3986 Appendix B, with groups for scheme, authority, path, query and fragment.
+COMPONENTS = re.compile(r"(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?", re.S)
 
 
 def is_token(text: str) -> bool:
@@ -33,10 +36,42 @@ def is_quoted_pair_char(c: str) -> bool:
 
 
 def is_uri_reference(text: str) -> bool:
-    """Character-level check of an RFC 3986 URI-reference: allowed characters, valid escapes."""
+    """An RFC 3986 URI-reference: its characters, escapes and component structure.
+
+    The contents of an IP literal between brackets are not checked further.
+    """
     if not all(c in URI_CHARS for c in text):
         return False
-    return all(_is_escape(text[i + 1 : i + 3]) for i, c in enumerate(text) if c == "%")
+    if not all(_is_escape(text[i + 1 : i + 3]) for i, c in enumerate(text) if c == "%"):
+        return False
+    match = COMPONENTS.fullmatch(text)
+    assert match is not None  # every group is optional, so any string matches
+    scheme, authority, path, query, fragment = match.groups()
+    # A colon before the first slash is only allowed after a valid scheme (path-noscheme).
+    if scheme is not None and not has_scheme(scheme + ":"):
+        return False
+    if fragment is not None and "#" in fragment:
+        return False
+    if any(c in part for c in "[]" for part in (path, query or "", fragment or "")):
+        return False
+    return authority is None or _is_authority(authority)
+
+
+def _is_authority(authority: str) -> bool:
+    userinfo, _, hostport = authority.rpartition("@")
+    if any(c in userinfo for c in "[]@"):
+        return False
+    if hostport.startswith("["):
+        close = hostport.find("]")
+        if close < 2 or "[" in hostport[1:close]:
+            return False
+        rest = hostport[close + 1 :]
+    else:
+        if "[" in hostport or "]" in hostport:
+            return False
+        _, colon, port = hostport.partition(":")
+        rest = colon + port
+    return rest == "" or (rest[0] == ":" and rest[1:].isdigit()) or rest == ":"
 
 
 def _is_escape(digits: str) -> bool:

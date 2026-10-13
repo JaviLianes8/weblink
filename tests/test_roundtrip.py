@@ -7,13 +7,18 @@ import string
 
 from weblink import Link, LinkError, build, encode_ext_value, parse
 
-_URI = string.ascii_letters + string.digits + "-._~:/?#[]@!$&'()*+,;="
+_PCHAR = string.ascii_letters + string.digits + "-._~!$&'()*+,;=:@/"
+_PREFIXES = ["", "/", "./", "https://h.test/", "//u@h.test:8080/", "https://[2001:db8::1]/", "urn:"]
 _NAMES = ["rel", "title", "type", "hreflang", "anchor", "media", "x-ext", "title*", "ext*"]
 _TEXT = "\t !#$%&'()*+,-./:;<=>?@[]^_`{|}~\"\\" + string.ascii_letters + string.digits
 
 
 def _random_link(rng: random.Random) -> Link:
-    uri = "".join(rng.choice(_URI) for _ in range(rng.randrange(0, 30)))
+    prefix = rng.choice(_PREFIXES)
+    # Without a prefix the first segment must not hold a colon (RFC 3986 path-noscheme).
+    chars = _PCHAR.replace(":", "") if prefix == "" else _PCHAR
+    uri = prefix + "".join(rng.choice(chars) for _ in range(rng.randrange(0, 20)))
+    uri += rng.choice(["", "?", "?a=1&b=:/?", "#", "#f/?", "?q#f"])
     pairs = [("rel", rng.choice(["next", "Prev last", "https://e.test/r", "a.b-c  d"]))]
     for _ in range(rng.randrange(0, 5)):
         name = rng.choice(_NAMES[1:])

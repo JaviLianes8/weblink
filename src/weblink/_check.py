@@ -10,8 +10,9 @@ from ._ext import decode_ext_value
 from ._model import Link
 from ._registry import is_registered
 
-# RFC 8288 section 3.3 reg-rel-type, compared case-insensitively (section 2.1.1).
-_REG_REL_TYPE = re.compile(r"[a-z][a-z0-9.\-]*", re.IGNORECASE)
+# RFC 8288 section 3.3 reg-rel-type, LOALPHA being %x61-7A (erratum 5319). A registered
+# name is accepted in any case as well, since section 2.1.1 compares them that way.
+_REG_REL_TYPE = re.compile(r"[a-z][a-z0-9.\-]*")
 # RFC 8288 sections 3.3 and 3.4.1: these may appear once in a link-value.
 _SINGLE = ("rel", "media", "title", "title*", "type")
 

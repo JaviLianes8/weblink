@@ -105,7 +105,7 @@ class Link:
 
     @property
     def rels(self) -> tuple[str, ...]:
-        """The relation types of ``rel``: registered names lower-cased, URIs as written."""
+        """The relation types of ``rel``, ASCII lower-cased as RFC 8288 compares them."""
         return tuple(normalise_rel(rel) for rel in (self.rel or "").split())
 
     def has_rel(self, relation_type: str) -> bool:
