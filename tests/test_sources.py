@@ -22,6 +22,7 @@ from weblink import (
     parse,
     resolve_uri,
 )
+from weblink._chars import is_qdtext
 
 
 def _section(text: str, title: str, end: str) -> str:
@@ -162,6 +163,7 @@ def test_quoted_values_accept_exactly_the_rfc_9110_qdtext(rfc9110: str) -> None:
     ]
     assert re.findall(r"obs-text +=(.+)", rfc9110)[0].split() == ["%x80-FF"]
     qdtext = {0x09, 0x20, 0x21, *range(0x23, 0x5C), *range(0x5D, 0x7F), *range(0x80, 0x100)}
+    assert [code for code in range(0x180) if is_qdtext(chr(code))] == sorted(qdtext)
     for code in range(0x180):
         try:
             parse(f'</>; rel=next; x="{chr(code)}"', strict=True)

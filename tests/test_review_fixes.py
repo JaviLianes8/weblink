@@ -91,3 +91,9 @@ def test_unicode_line_separators_do_not_split_a_value() -> None:
     text = 'Link: </a>; rel=next; title="x\u2028y", </b>; rel=prev'
     assert field_values(text) == ['</a>; rel=next; title="x\u2028y", </b>; rel=prev']
     assert len(parse(field_values(text))) == 2
+
+
+@pytest.mark.parametrize("uri", ["a%", "a%4", "%"])
+def test_a_truncated_percent_escape_is_not_a_uri_reference(uri: str) -> None:
+    with pytest.raises(LinkError, match="URI reference"):
+        parse(f"<{uri}>; rel=next", strict=True)

@@ -44,3 +44,9 @@ def test_dot_segments_at_the_root_stop_there() -> None:
     assert resolve_uri("../../../..", "http://a/b/c") == "http://a/"
     assert resolve_uri("/..", "http://a/b") == "http://a/"
     assert resolve_uri("/.", "http://a/b") == "http://a/"
+
+
+def test_a_bare_dot_or_dot_dot_path_is_removed() -> None:
+    # Only a reference with a scheme keeps its path unmerged, so "." and ".." stay bare.
+    assert resolve_uri("g:..", "http://a/b") == "g:"
+    assert resolve_uri("g:.", "http://a/b") == "g:"
