@@ -18,9 +18,8 @@ def parse(header: str | Iterable[str], *, strict: bool = False) -> list[Link]:
 
     ``header`` is one field value or an iterable of them (one per header line); a list
     never continues across lines. By default parsing is tolerant: a link that cannot be
-    read is skipped up to the next comma outside quotes and angle brackets, so it does
-    not hide the links after it. An unclosed quoted value runs to the end of its line,
-    as in RFC 8288 Appendix B.4.
+    read is skipped up to the next comma, so it does not hide the links after it. An
+    unclosed quoted value runs to the end of its line, as in RFC 8288 Appendix B.4.
 
     With ``strict=True`` anything outside the RFC 8288 grammar raises
     :class:`LinkError`, as do a missing or repeated ``rel``, a repeated ``media``,
@@ -141,30 +140,7 @@ class _Line:
         return "".join(out), len(s)
 
     def resync(self, i: int) -> int:
-        """The next comma outside a closed quoted string or closed angle brackets."""
-        s = self.s
-        while i < len(s):
-            c = s[i]
-            if c == ",":
-                return i
-            if c == '"':
-                close = _closing_quote(s, i)
-                i = i + 1 if close == -1 else close + 1
-            elif c == "<":
-                close = s.find(">", i + 1)
-                i = i + 1 if close == -1 else close + 1
-            else:
-                i += 1
-        return i
-
-
-def _closing_quote(s: str, i: int) -> int:
-    i += 1
-    while i < len(s):
-        if s[i] == "\\":
-            i += 2
-        elif s[i] == '"':
-            return i
-        else:
-            i += 1
-    return -1
+        # Text outside the grammar has no quoting: honouring a stray quote or bracket there
+        # would let it swallow the well-formed links that follow, so the next comma wins.
+        end = self.s.find(",", i)
+        return len(self.s) if end == -1 else end
