@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import TYPE_CHECKING
 
 from ._errors import LinkError
 from ._ext import decode_ext_value
@@ -38,8 +38,10 @@ class Link:
         object.__setattr__(self, "_uri", uri)
         object.__setattr__(self, "_pairs", tuple(pairs))
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        raise AttributeError("Link is immutable")
+    if not TYPE_CHECKING:  # hidden from type checkers so they flag assignments themselves
+
+        def __setattr__(self, name: str, value: object) -> None:
+            raise AttributeError("Link is immutable")
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Link):

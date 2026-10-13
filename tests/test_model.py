@@ -53,7 +53,7 @@ def test_construction_checks_types() -> None:
     with pytest.raises(TypeError, match="uri"):
         Link(b"/a")  # type: ignore[arg-type]
     with pytest.raises(TypeError, match="str"):
-        Link("/a", {"rel": 1})  # type: ignore[dict-item]
+        Link("/a", {"rel": 1})  # type: ignore[arg-type]
     with pytest.raises(TypeError, match="str"):
         Link("/a", [(1, "x")])  # type: ignore[list-item]
 
