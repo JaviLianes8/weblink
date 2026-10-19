@@ -79,3 +79,11 @@ def test_get_reads_extension_star_parameters() -> None:
 def test_only_the_first_star_value_is_considered() -> None:
     link = Link("/", [("title*", "broken"), ("title*", "UTF-8''b"), ("title", "plain")])
     assert link.title == "plain"
+
+
+def test_iso_8859_1_maps_every_octet_to_the_code_point_of_the_same_number() -> None:
+    # https://www.unicode.org/Public/MAPPINGS/ISO8859/8859-1.TXT (read 2026-10-19) maps all
+    # 256 octets to U+0000..U+00FF one to one; windows-1252 differs at 0x80..0x9F.
+    octets = range(0x80, 0x100)
+    text = "ISO-8859-1''" + "".join(f"%{o:02X}" for o in octets)
+    assert decode_ext_value(text).value == "".join(chr(o) for o in octets)

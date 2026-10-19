@@ -117,7 +117,7 @@ class _Line:
                 else:
                     value, i = self.bare(i)
             if name:
-                pairs.append((name.lower(), value))
+                pairs.append((name, value))  # Link lower-cases names
 
     def bare(self, i: int) -> tuple[str, int]:
         start = i
