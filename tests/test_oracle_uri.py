@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import importlib.metadata
 import random
+import re
 
 import pytest
 import uri_oracle
 
 from weblinking import resolve_uri
 
+VALID_SCHEME = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*")
 PIECES = ["a", "b", "g", ".", "..", "/", "/", "/", "?", "#", ";", "=", "x:y", "@", "!", "%41"]
 LEADS = ["", "", "/", "//h", "//", "http:", "s:", "?", "#", "./", "../"]
 BASES = ["http://a", "http://a/", "s:", "s:/", "s:p", "http://a/b/c/d;p?q", "file:///x/y"]
@@ -33,6 +35,9 @@ def test_resolution_matches_the_rfc_pseudocode(seed: int) -> None:
         base = rng.choice(BASES) + "".join(rng.choice(PIECES) for _ in range(rng.randint(0, 4)))
         if "#" in base.partition("#")[2] or base.startswith(("?", "#", "/")):
             continue
+        scheme = uri_oracle.split(reference)[0]
+        if scheme is not None and not VALID_SCHEME.fullmatch(scheme):
+            continue  # not a URI reference: covered by the test below
         assert resolve_uri(reference, base) == uri_oracle.resolve(reference, base)
 
 
@@ -77,6 +82,22 @@ def test_the_rfc3986_package_agrees_apart_from_its_documented_departures() -> No
         else:
             assert _rfc3986_departure(reference, ours), (reference, base, ours, theirs)
     assert agreed > 80_000
+
+
+@pytest.mark.parametrize(
+    ("reference", "resolved"),
+    [
+        ("!x:y", "http://a/b/c/!x:y"),
+        ("a b:c/../d", "http://a/b/c/d"),
+        ("1a:b", "http://a/b/c/1a:b"),
+        ("_:x?q#f", "http://a/b/c/_:x?q#f"),
+        ("a+b.c-d:e", "a+b.c-d:e"),
+    ],
+)
+def test_text_before_a_colon_that_is_not_a_scheme_is_a_relative_path(
+    reference: str, resolved: str
+) -> None:
+    assert resolve_uri(reference, "http://a/b/c/d") == resolved
 
 
 def test_the_pseudocode_oracle_gives_the_rfc_examples() -> None:

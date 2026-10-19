@@ -28,8 +28,11 @@ and follow Semantic Versioning.
   as plain `str`.
 - `Link.context` raises `LinkError` for a base that is not an absolute URI also when the
   link has no `anchor`, as `Link.resolve` and `resolve_uri` do.
-- Error messages quote at most 80 characters of the offending text, followed by its
-  length, so a huge input never ends up whole in a log line.
+- `resolve_uri` (and so `Link.resolve` and `Link.context`) reads a reference whose text
+  before the first colon is not a scheme, such as `a b:c` or `1a:b`, as a relative path;
+  it used to return such a reference unresolved, as if it were absolute.
+- Error messages quote at most 80 characters of the offending text (fewer when they need
+  escapes), followed by its length, so a huge input never ends up whole in a log line.
 - `ExtValue`, `Link` and `LinkError` report `weblinking` as their module, so pickles and
   tracebacks never name a private module.
 

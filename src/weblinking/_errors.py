@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-# Messages quote at most this many characters of the offending text, so a huge input
-# never ends up whole in a log line.
+# Messages quote at most this many characters of the offending text (fewer when they
+# need escapes), so a huge input never ends up whole in a log line.
 _QUOTE_LIMIT = 80
 
 
@@ -30,10 +30,17 @@ class LinkError(ValueError):
 
 
 def quote(text: str) -> str:
-    """The repr of ``text``, cut to its first characters when it is long."""
-    if len(text) <= _QUOTE_LIMIT:
+    """The repr of ``text``, cut once its escaped form passes the limit."""
+    shown = size = 0
+    for c in text[: _QUOTE_LIMIT + 1]:
+        # A control character or a lone surrogate takes up to ten characters escaped.
+        size += len(repr(c)) - 2
+        if size > _QUOTE_LIMIT:
+            break
+        shown += 1
+    if shown == len(text):
         return repr(text)
-    return f"{text[:_QUOTE_LIMIT]!r}... ({len(text)} characters)"
+    return f"{text[:shown]!r}... ({len(text)} characters)"
 
 
 def need_str(value: object, what: str) -> str:
