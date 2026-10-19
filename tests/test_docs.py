@@ -8,7 +8,7 @@ import itertools
 import re
 from pathlib import Path
 
-import weblink
+import weblinking
 
 ROOT = Path(__file__).resolve().parents[1]
 README = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -56,7 +56,7 @@ def test_every_print_in_the_readme_shows_its_output() -> None:
 
 def test_the_api_table_lists_every_public_name() -> None:
     table = README.split("## API", 1)[1].split("\n## ", 1)[0]
-    for name in weblink.__all__:
+    for name in weblinking.__all__:
         assert f"`{name}" in table, name
 
 
@@ -64,12 +64,12 @@ def test_version_matches_pyproject() -> None:
     text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     match = re.search(r'^version = "([^"]+)"$', text, flags=re.MULTILINE)
     assert match is not None
-    assert match.group(1) == weblink.__version__
+    assert match.group(1) == weblinking.__version__
 
 
 def test_changelog_has_an_entry_for_this_version() -> None:
     text = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    assert f"## [{weblink.__version__}]" in text
+    assert f"## [{weblinking.__version__}]" in text
 
 
 def test_no_em_dash_anywhere_in_the_tree() -> None:

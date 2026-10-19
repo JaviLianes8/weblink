@@ -1,4 +1,4 @@
-"""The weblink command, driven in process with injected streams."""
+"""The weblinking command, driven in process with injected streams."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ import json
 
 import pytest
 
-from weblink._cli import field_values, main
+from weblinking._cli import field_values, main
 
 # A response head shaped like `curl -sI` output; the Link value is the live header
-# https://api.github.com/repos/JaviLianes8/weblink/commits?per_page=1&page=1 returned on
+# https://api.github.com/repos/JaviLianes8/weblinking/commits?per_page=1&page=1 returned on
 # 2026-10-13.
 HEAD = (
     "HTTP/2 200\r\n"
@@ -75,10 +75,10 @@ def test_python_dash_m_runs_the_command() -> None:
     import sys
 
     argv, stdout = sys.argv, sys.stdout
-    sys.argv, sys.stdout = ["weblink", "</a>; rel=next"], io.StringIO()
+    sys.argv, sys.stdout = ["weblinking", "</a>; rel=next"], io.StringIO()
     try:
         with pytest.raises(SystemExit) as stopped:
-            runpy.run_module("weblink", run_name="__main__")
+            runpy.run_module("weblinking", run_name="__main__")
         printed = sys.stdout.getvalue()
     finally:
         sys.argv, sys.stdout = argv, stdout

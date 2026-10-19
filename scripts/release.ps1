@@ -5,11 +5,11 @@ $ErrorActionPreference = "Stop"
 # Works on both Windows PowerShell 5.1 and pwsh 7 (generic catch, no PS7-only types).
 $taken = $true
 try {
-    Invoke-WebRequest -UseBasicParsing "https://pypi.org/pypi/weblink/json" | Out-Null
+    Invoke-WebRequest -UseBasicParsing "https://pypi.org/pypi/weblinking/json" | Out-Null
 } catch {
     if ($_.Exception.Response.StatusCode.value__ -eq 404) { $taken = $false } else { throw }
 }
-if ($taken) { throw "The name 'weblink' already exists on PyPI. Choose another before publishing." }
+if ($taken) { throw "The name 'weblinking' already exists on PyPI. Choose another before publishing." }
 
 $token = $env:PYPI_TOKEN
 if (-not $token -and (Test-Path "C:\secrets\pypi-token.txt")) {

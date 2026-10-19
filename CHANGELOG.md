@@ -22,7 +22,7 @@ All notable changes to this project are documented here. The format follows
 - `Link.pairs`, `Link.get_all` and `Link.hreflangs` keep parameters that repeat.
 - `Link.has_rel`, `find` and `find_all`; `REGISTERED_RELATIONS` and `is_registered` from
   the IANA registry; `Link.rev`, `Link.anchor` and `Link.media`.
-- The `weblink` command (also `python -m weblink`) prints the links of a header value or
+- The `weblinking` command (also `python -m weblinking`) prints the links of a header value or
   of a response head as ASCII JSON, with `--base` and `--strict`. Standard input is read
   as ISO-8859-1 octets; in a head only `Link` fields of the final response count.
 

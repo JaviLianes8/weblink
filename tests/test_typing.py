@@ -12,8 +12,8 @@ import pytest
 SRC = Path(__file__).resolve().parents[1] / "src"
 
 SNIPPET = """
-from weblink import Link, build, decode_ext_value, find, find_all, parse, resolve_uri
-from weblink import REGISTERED_RELATIONS, encode_ext_value, is_registered
+from weblinking import Link, build, decode_ext_value, find, find_all, parse, resolve_uri
+from weblinking import REGISTERED_RELATIONS, encode_ext_value, is_registered
 reveal_type(parse("</a>; rel=next"))
 reveal_type(build([Link("/a", {"rel": "next"})]))
 reveal_type(find([], "next"))
@@ -60,13 +60,13 @@ def mypy_output(tmp_path_factory: pytest.TempPathFactory) -> str:
 def test_functions_return_plain_types(mypy_output: str) -> None:
     revealed = [_revealed(mypy_output, line) for line in range(4, 15)]
     # mypy releases spell a NamedTuple differently; the fallback names the class in all.
-    assert revealed[7].endswith("fallback=weblink._ext.ExtValue]")
+    assert revealed[7].endswith("fallback=weblinking._ext.ExtValue]")
     revealed[7] = "ExtValue"
     assert revealed == [
-        "list[weblink._model.Link]",
+        "list[weblinking._model.Link]",
         "str",
-        "weblink._model.Link | None",
-        "list[weblink._model.Link]",
+        "weblinking._model.Link | None",
+        "list[weblinking._model.Link]",
         "tuple[tuple[str, str], ...]",
         "str | None",
         "tuple[str, ...]",

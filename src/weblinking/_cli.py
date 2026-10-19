@@ -20,9 +20,9 @@ _HEAD = re.compile(r"HTTP/|[!#$%&'*+.^_`|~0-9A-Za-z-]+[ \t]*:")
 def main(
     argv: Sequence[str] | None = None, stdin: TextIO | None = None, stdout: TextIO | None = None
 ) -> int:
-    """Run the ``weblink`` command and return its exit status."""
+    """Run the ``weblinking`` command and return its exit status."""
     parser = argparse.ArgumentParser(
-        prog="weblink",
+        prog="weblinking",
         description="Print the links of a Link header as JSON. Without HEADER, read standard "
         "input: either a bare header value or a response head such as `curl -sI URL` prints.",
     )
@@ -44,7 +44,7 @@ def main(
         if args.base is not None:
             links = [link.resolve(args.base) for link in links]
     except LinkError as error:
-        print(f"weblink: {error}", file=sys.stderr)
+        print(f"weblinking: {error}", file=sys.stderr)
         return 2
     rows = [{"uri": link.uri, "rels": list(link.rels), "params": link.pairs} for link in links]
     # ASCII output cannot fail on a console or pipe whose encoding lacks a character.

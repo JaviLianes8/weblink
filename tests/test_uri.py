@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from weblink import LinkError, resolve_uri
+from weblinking import LinkError, resolve_uri
 
 
 def test_a_base_without_a_scheme_is_refused() -> None:

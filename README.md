@@ -1,4 +1,4 @@
-# weblink
+# weblinking
 
 Parse, validate, resolve and build the HTTP `Link` header (RFC 8288), with RFC 8187
 titles, typed and zero-dependency.
@@ -6,7 +6,7 @@ titles, typed and zero-dependency.
 ## Install
 
 ```
-pip install weblink
+pip install weblinking
 ```
 
 ## Usage
@@ -14,7 +14,7 @@ pip install weblink
 Read the pagination links an API sends:
 
 ```python
-from weblink import find, parse
+from weblinking import find, parse
 
 header = (
     '<https://api.example.com/items?page=2>; rel="next", '
@@ -33,7 +33,7 @@ server sent one, and relation types compare case-insensitively (ASCII letters on
 as RFC 8288 requires for registered names and extension URIs alike:
 
 ```python
-from weblink import parse
+from weblinking import parse
 
 lines = [
     "</TheBook/chapter4>; rel=\"Next\"; title*=UTF-8'de'n%c3%a4chstes%20Kapitel",
@@ -52,7 +52,7 @@ Relative targets and anchors resolve against the URL of the response, following
 RFC 3986 section 5 exactly:
 
 ```python
-from weblink import parse
+from weblinking import parse
 
 (link,) = parse('<../terms>; rel="copyright"; anchor="#foo"')
 resolved = link.resolve("https://example.com/docs/page")
@@ -67,7 +67,7 @@ comma, so it does not hide the links after it. `strict=True` checks the RFC 8288
 grammar instead and raises `LinkError`, a `ValueError` carrying the offset:
 
 ```python
-from weblink import LinkError, parse
+from weblinking import LinkError, parse
 
 print(len(parse('junk, <https://a.example/>; rel="next"')))
 # 1
@@ -84,7 +84,7 @@ without `rel`), so a value from user input cannot inject a header line. Text bey
 ASCII goes in a starred parameter:
 
 ```python
-from weblink import Link, build, encode_ext_value
+from weblinking import Link, build, encode_ext_value
 
 title = encode_ext_value("nächstes Kapitel", "de")
 print(build([Link("/chapter4", {"rel": "next", "title*": title})]))
@@ -97,13 +97,13 @@ print(build([Link("/b", [("rel", "alternate"), ("hreflang", "en"), ("hreflang", 
 
 ## Command line
 
-`weblink` prints the links of a header value, or of a whole response head, as ASCII
+`weblinking` prints the links of a header value, or of a whole response head, as ASCII
 JSON. In a head only `Link` fields count, the body after the blank line is ignored, and
 after redirects (`curl -sIL`) the final response wins:
 
 ```
-curl -sI "https://api.github.com/repos/python/cpython/tags?per_page=5" | weblink
-weblink --base https://example.com/a/ '<../b>; rel="up"'
+curl -sI "https://api.github.com/repos/python/cpython/tags?per_page=5" | weblinking
+weblinking --base https://example.com/a/ '<../b>; rel="up"'
 ```
 
 `--strict` rejects input outside RFC 8288; errors exit with status 2.
@@ -147,7 +147,7 @@ The `Link` header is how APIs expose pagination and relations, yet there is no s
 typed, zero-dependency library that both parses and builds it. `requests` keeps its
 parser private, `httplink` only parses and has not been released since 2020,
 `LinkHeader` cites the superseded RFC 5988 and was last touched in 2015, and `ietfparse`
-is a broad multi-RFC parser. `weblink` does one job, both directions, with full type
+is a broad multi-RFC parser. `weblinking` does one job, both directions, with full type
 hints and nothing to install alongside it.
 
 ## License

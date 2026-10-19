@@ -1,4 +1,4 @@
-"""Run the command line with ``python -m weblink``."""
+"""Run the command line with ``python -m weblinking``."""
 
 from __future__ import annotations
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 import string
 
-from weblink import Link, LinkError, build, encode_ext_value, parse
+from weblinking import Link, LinkError, build, encode_ext_value, parse
 
 _PCHAR = string.ascii_letters + string.digits + "-._~!$&'()*+,;=:@/"
 _PREFIXES = ["", "/", "./", "https://h.test/", "//u@h.test:8080/", "https://[2001:db8::1]/", "urn:"]

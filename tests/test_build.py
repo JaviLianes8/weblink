@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from weblink import Link, LinkError, build, encode_ext_value, parse
+from weblinking import Link, LinkError, build, encode_ext_value, parse
 
 
 def test_build_a_single_link() -> None:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from weblink import ExtValue, Link, LinkError, decode_ext_value, encode_ext_value, parse
+from weblinking import ExtValue, Link, LinkError, decode_ext_value, encode_ext_value, parse
 
 
 def test_decode_keeps_the_language_and_names_the_charset() -> None:
