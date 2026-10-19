@@ -6,6 +6,38 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-19
+
+First stable release. The names in `__all__`, their signatures, parameter names and
+defaults, the `Link` members, the `ExtValue` fields, `LinkError` with `message` and
+`position`, and the `weblinking` command with its options and JSON output are now stable
+and follow Semantic Versioning.
+
+### Changed
+
+- The project was developed as `weblink`, a name PyPI refused; the distribution, the
+  import package and the command are now `weblinking`. Nothing was published before.
+- Arguments of the wrong type raise `TypeError` everywhere: `resolve_uri`, `find`,
+  `find_all` (also for items that are not `Link`), `is_registered`, `encode_ext_value`,
+  `decode_ext_value`, `Link.get`, `Link.get_all`, `Link.has_rel`, `Link.resolve`,
+  `Link.context` and `build` given a single `Link` or a string. They used to fail with
+  `AttributeError` or a bare `ValueError`.
+- `Link` takes parameters as a mapping or as `(name, value)` pairs written as tuples or
+  lists; a string, bytes or an item of another length raise `TypeError` (a string of two
+  characters used to be read as one name and one value). Subclasses of `str` are stored
+  as plain `str`.
+- `Link.context` raises `LinkError` for a base that is not an absolute URI also when the
+  link has no `anchor`, as `Link.resolve` and `resolve_uri` do.
+- Error messages quote at most 80 characters of the offending text, followed by its
+  length, so a huge input never ends up whole in a log line.
+- `ExtValue`, `Link` and `LinkError` report `weblinking` as their module, so pickles and
+  tracebacks never name a private module.
+
+### Added
+
+- Runnable examples in the docstring of every public name, checked by the test suite.
+- A guide (`GUIDE.md`) with the full behaviour, the error rules and the standards.
+
 ## [0.2.0]
 
 ### Added

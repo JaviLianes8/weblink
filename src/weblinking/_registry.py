@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from ._errors import need_str
+
 # Names from the IANA "Link Relation Types" registry
 # (https://www.iana.org/assignments/link-relations/link-relations-1.csv), last updated
 # 2026-06-12. tests/test_sources.py compares this set with the fetched registry.
@@ -149,8 +151,14 @@ _ASCII_LOWER = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrst
 
 
 def is_registered(relation_type: str) -> bool:
-    """True when ``relation_type`` is in the IANA registry, compared case-insensitively."""
-    return normalise_rel(relation_type) in REGISTERED_RELATIONS
+    """True when ``relation_type`` is in the IANA registry, compared case-insensitively.
+
+    Only ASCII letters fold, as for :meth:`Link.has_rel`; ``TypeError`` for a non-``str``.
+
+    >>> is_registered("Next"), is_registered("https://example.com/rel/x")
+    (True, False)
+    """
+    return normalise_rel(need_str(relation_type, "relation_type")) in REGISTERED_RELATIONS
 
 
 def normalise_rel(relation_type: str) -> str:

@@ -26,7 +26,17 @@ def parse(header: str | Iterable[str], *, strict: bool = False) -> list[Link]:
     ``rel``, a repeated ``media``, ``title``, ``title*`` or ``type``, relation types that
     are neither registered nor ``reg-rel-type`` nor absolute URIs, targets and anchors
     that are not URI references, and starred values that are not RFC 8187 ext-values.
-    Its ``position`` is the offset in the failing line.
+    Its ``position`` is the offset in the failing line. ``TypeError`` is raised for
+    ``bytes`` and for lines that are not ``str``.
+
+    >>> parse('<https://a.test/?page=2>; rel="next", <https://a.test/>; rel=first')
+    [Link('https://a.test/?page=2', {'rel': 'next'}), Link('https://a.test/', {'rel': 'first'})]
+    >>> parse(["</a>; rel=next", 'junk, </b>; rel="prev"'])
+    [Link('/a', {'rel': 'next'}), Link('/b', {'rel': 'prev'})]
+    >>> parse("</a>; rel=next; rel=prev", strict=True)
+    Traceback (most recent call last):
+    ...
+    weblinking.LinkError: parameter 'rel' appears more than once (offset 0)
     """
     if isinstance(header, (bytes, bytearray)):
         raise TypeError("header must be str or an iterable of str, not bytes; decode it first")
