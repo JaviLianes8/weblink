@@ -38,6 +38,7 @@ weblinking = "weblinking._cli:main"
 
 [project.urls]
 Homepage = "https://lianes8studio.com"
+Documentation = "https://github.com/JaviLianes8/weblinking/blob/main/GUIDE.md"
 Source = "https://github.com/JaviLianes8/weblinking"
 Issues = "https://github.com/JaviLianes8/weblinking/issues"
 Changelog = "https://github.com/JaviLianes8/weblinking/blob/main/CHANGELOG.md"
@@ -49,14 +50,7 @@ packages = ["src/weblinking"]
 
 [tool.hatch.build.targets.sdist]
 # Third-party reference files are fetched locally and never shipped; only their manifest is.
-exclude = [
-    ".github",
-    "IMPROVEMENTS-round*.md",
-    "CERT-1.0-*.md",
-    "tests/upstream/*.txt",
-    "tests/upstream/*.csv",
-    "tests/upstream/*.md",
-]
+exclude = [".github", "IMPROVEMENTS-round*.md", "CERT-1.0-*.md", "tests/upstream/*", "!tests/upstream/MANIFEST.json"]
 
 [tool.ruff]
 line-length = 100

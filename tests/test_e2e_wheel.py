@@ -60,6 +60,20 @@ for call in (
         assert isinstance(error, ValueError)
     else:
         raise AssertionError("expected LinkError")
+for wrong in (lambda: find(links, None), lambda: Link("/a", "rel"), lambda: build(links[0])):
+    try:
+        wrong()
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("expected TypeError")
+try:
+    resolve_uri("a", "x" * 10_000)
+except LinkError as error:
+    assert len(str(error)) < 300 and error.position is None
+assert resolve_uri("a b:c", "http://h/x/y") == "http://h/x/a b:c"
+assert Link.__module__ == LinkError.__module__ == "weblinking"
+assert importlib.metadata.metadata("weblinking")["Requires-Dist"] is None
 print("e2e ok")
 """
 
@@ -84,7 +98,12 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     entry_points = next(name for name in names if name.endswith("entry_points.txt"))
     assert "weblinking = weblinking._cli:main" in zipfile.ZipFile(wheel).read(entry_points).decode()
     listing = _run(sys.executable, "-m", "tarfile", "-l", sdist).stdout.decode()
-    assert "IMPROVEMENTS-round" not in listing
+    assert "IMPROVEMENTS-round" not in listing and "CERT-1.0" not in listing
+    assert "GUIDE.md" in listing and "LICENSE" in listing and "node_modules" not in listing
+    assert any(name.endswith("licenses/LICENSE") for name in names)
+    metadata = next(name for name in names if name.endswith("METADATA"))
+    text = zipfile.ZipFile(wheel).read(metadata).decode()
+    assert "Version: 1.0.0" in text and "Development Status :: 5 - Production/Stable" in text
     assert "tests/upstream/MANIFEST.json" in listing
     for fetched in ("rfc8288.txt", "rfc8187.txt", "rfc3986.txt", "rfc9110.txt"):
         assert fetched not in listing, fetched
