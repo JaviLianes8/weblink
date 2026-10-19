@@ -73,7 +73,8 @@ except LinkError as error:
     assert len(str(error)) < 300 and error.position is None
 assert resolve_uri("a b:c", "http://h/x/y") == "http://h/x/a b:c"
 assert Link.__module__ == LinkError.__module__ == "weblinking"
-assert importlib.metadata.metadata("weblinking")["Requires-Dist"] is None
+requires = importlib.metadata.requires("weblinking") or []
+assert requires and all("extra ==" in item for item in requires), requires
 print("e2e ok")
 """
 
