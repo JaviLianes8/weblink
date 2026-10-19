@@ -26,7 +26,7 @@ Progress:
 | --- | --- | --- |
 | 1 | Public API reviewed for stability | PASS: names, signatures, parameter names and defaults pinned by `tests/test_contract_api.py`; every change in the CHANGELOG |
 | 2 | `__all__` exact, no private imports in docs | PASS: `tests/test_contract.py` |
-| 3 | Docstrings with runnable examples | PASS: every public name and the main `Link` members; doctests plus README and GUIDE examples run as tests |
+| 3 | Docstrings with runnable examples | PASS: every public name and every `Link` member; doctests run with their own module globals, plus README and GUIDE examples |
 | 4 | Typed end to end | PASS: `mypy --strict src tests`, `py.typed` shipped, typing checked from a consumer |
 | 5 | Typed, documented, bounded errors | PASS: `LinkError` (a `ValueError`) with `message` and `position`, `TypeError` for wrong types, messages quote at most 80 characters |
 | 6 | Contract tests of every public name | PASS |
@@ -157,3 +157,46 @@ At 79f9c27 on the laptop from a fresh clone, CPython 3.14.6, each command on its
 with the fetched sources, the reference parsers, `WEBLINKING_E2E=1` and
 `WEBLINKING_LIVE=1`: `ruff format --check .`, `ruff check .`, `mypy --strict src`,
 `mypy --strict src tests` and `pytest` (320 passed, no skips) all exit 0.
+
+## QA lenses (item 19)
+
+### Round 1 (on 34db338)
+
+Five lenses: a (API and docs), b (correctness and ground truth), c (adversarial),
+d (packaging and e2e), e (contract strength, own mutation round). Every finding was
+fixed; none is disputed. Behaviour fixes got a contract in `tests/test_qa_fixes.py`
+that failed on 34db338 first (run against an export of that commit), then passed.
+
+| Lens | Finding | What changed |
+| --- | --- | --- |
+| a F1, b F3, d D1 | Project URLs and README links named a repository that does not exist | Every link points at github.com/JaviLianes8/weblink (pyproject URLs, README, the `test_docs` pin, the `test_cli` fixture comment). The repository, its issues, `CHANGELOG.md` and `LICENSE` on `main` answer 200; `GUIDE.md` and this report answer 200 on `release/1.0.0` and reach `main` with the merge |
+| a F2 | README and GUIDE named parameters that do not exist | The API table and the GUIDE give the real names and defaults: `relation_type`, `encode_ext_value(value, language="")`, `Link(uri, params=())` |
+| a F3 | The `params` type refused the list pairs the docs promise | `Params` accepts `list[str]` pairs; `tests/test_typing.py` type-checks a literal list pair and a `json.loads` result |
+| a F4 | `find` and `find_all` examples relied on injected globals | The examples import what they use; the doctest test runs each module with its own globals, so `pytest --doctest-modules src` and `doctest.testmod` pass too |
+| a F5 | The prescribed dev setup failed `mypy --strict src tests` | The `dev` extra installs `rfc3986==2.0.0`, `httplink==0.2.0`, `ietfparse==1.9.0` and `requests==2.34.2`, the versions the tests pin; checked in a fresh venv from `requirements-dev.txt` (gates below) |
+| a F6 | `del` on a `Link` attribute succeeded | `__delattr__` raises `AttributeError("Link is immutable")`: `test_attributes_cannot_be_deleted_or_assigned` |
+| a F7, c F4 | Parameter names folded with Unicode `lower()` (Kelvin sign to `k`) | Names fold only ASCII letters in `Link`, `get` and `get_all`, so such a name stays a non-token that `build` refuses: `test_parameter_names_fold_only_ascii_letters` |
+| a F8 | CHANGELOG history was inaccurate | 0.2.0 and 0.1.0 are dated and marked as unpublished development versions named `weblink`; the 0.2.0 command is `weblink` |
+| a F9 | Eleven `Link` members had no example | Every `Link` member has one (the accessors moved to the private `_access` module to keep files under 200 lines); `test_every_link_member_has_an_example` checks all 17 |
+| b F1 | `rels` split on any Unicode whitespace | `rels` splits on runs of SP, HTAB, CR and LF only: `test_relation_types_split_only_on_spaces_and_tabs` (NBSP, NEL, VT, FF, U+001C, U+2003, U+3000) |
+| b F2 | Strict ext-value checking was described as the RFC 8187 grammar | Documentation fix: `parse`, `build`, `decode_ext_value`, the GUIDE and the README state the rule applied (UTF-8 and ISO-8859-1 only, escaped octets must decode, a light language check, not RFC 5646) |
+| c F1 | Error messages quoted credentials and signed queries | Messages about a target, an anchor or a base URI show its userinfo and query as `***`: `test_error_messages_never_quote_credentials_or_queries`, `test_redacted_messages_keep_the_rest_of_the_value` |
+| c F2 | `parse` ran the methods of a `str` subclass | Each line is read as a plain `str`: `test_parse_reads_str_subclasses_as_plain_text` (it hung on 34db338) |
+| c F3, d D2 | A closed stdout pipe printed a traceback | The command stops quietly with status 1 (EPIPE, or EINVAL on Windows) and points stdout at the null device: `test_the_command_exits_quietly_when_the_reader_stops_early` by subprocess |
+| e F1-P02 | Survivor: name no longer stops at a comma | `test_a_valueless_parameter_ends_at_a_comma` |
+| e F2-P13 | Survivor: unclosed quote ending in a backslash | `test_strict_refuses_an_unclosed_quote_ending_in_a_backslash` |
+| e F3-L02 | Survivor: equality by set of pairs | `test_equality_and_hash_follow_pair_order_and_repetition` |
+| e F4-L13 | Survivor: last anchor used | `test_the_first_anchor_is_the_context` |
+| e F5-L14 | Survivor: `rel` read through `get` | `test_a_starred_rel_never_overrides_rel` |
+| e F6-L11 | Survivor: `__setattr__` dropped | `test_attributes_cannot_be_deleted_or_assigned` |
+
+The six lens e mutants were applied again, one at a time, to the fixed tree: each is
+killed by the test named above.
+
+Fix commit c8eb48a. Gates on this PC from a fresh clone of that commit, a new venv with
+`pip install -r requirements-dev.txt` (CPython 3.13.2), the fetched sources and
+`http-link-header` 1.1.4, `WEBLINKING_E2E=1` and `WEBLINKING_LIVE=1`:
+`ruff format --check .`, `ruff check .`, `mypy --strict src`, `mypy --strict src tests`
+and `pytest` (347 passed, no skips) all exit 0.
+
+Disputed findings: none.
