@@ -1,4 +1,4 @@
-"""The README examples run and print what their comments say; docs and versions agree."""
+"""The README and GUIDE examples run and print what their comments say; docs agree."""
 
 from __future__ import annotations
 
@@ -12,10 +12,11 @@ import weblinking
 
 ROOT = Path(__file__).resolve().parents[1]
 README = (ROOT / "README.md").read_text(encoding="utf-8")
+GUIDE = (ROOT / "GUIDE.md").read_text(encoding="utf-8")
 
 
-def _python_blocks() -> list[str]:
-    return re.findall(r"```python\n(.*?)```", README, flags=re.DOTALL)
+def _python_blocks(text: str = README) -> list[str]:
+    return re.findall(r"```python\n(.*?)```", text, flags=re.DOTALL)
 
 
 def _expected_output(block: str) -> list[str]:
@@ -32,22 +33,37 @@ def _expected_output(block: str) -> list[str]:
     return expected
 
 
-def test_every_readme_example_runs_and_prints_its_comment() -> None:
+def _run_examples(text: str, name: str) -> int:
     checked = 0
-    for block in _python_blocks():
+    for block in _python_blocks(text):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            exec(compile(block, "README.md", "exec"), {"__name__": "readme"})
+            exec(compile(block, name, "exec"), {"__name__": "docs"})
         expected = _expected_output(block)
         assert expected, block
         assert out.getvalue().splitlines() == expected
         checked += len(expected)
+    return checked
+
+
+def test_every_readme_example_runs_and_prints_its_comment() -> None:
+    assert _run_examples(README, "README.md") == 11
     assert len(_python_blocks()) == 5
-    assert checked == 11
 
 
-def test_every_print_in_the_readme_shows_its_output() -> None:
-    for block in _python_blocks():
+def test_every_guide_example_runs_and_prints_its_comment() -> None:
+    assert _run_examples(GUIDE, "GUIDE.md") == 11
+    assert len(_python_blocks(GUIDE)) == 7
+
+
+def test_the_readme_links_absolutely_to_the_guide_changelog_and_license() -> None:
+    for name in ("GUIDE.md", "CHANGELOG.md", "LICENSE"):
+        assert f"(https://github.com/JaviLianes8/weblinking/blob/main/{name})" in README
+    assert not re.search(r"\]\((?!https://)", README), "relative link in README"
+
+
+def test_every_print_in_the_docs_shows_its_output() -> None:
+    for block in _python_blocks() + _python_blocks(GUIDE):
         lines = block.splitlines()
         for index, line in enumerate(lines):
             if line.strip().startswith("print("):
