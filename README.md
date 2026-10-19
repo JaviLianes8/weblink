@@ -167,8 +167,8 @@ Checked on 2026-10-19 by running each one:
 
 `weblinking` does this one header, both directions, with strict and tolerant reading,
 RFC 8187 values, RFC 3986 resolution, full type hints and no dependencies. Its parser is
-checked against all four of the libraries above and the `http-link-header` package for
-Node.js; see [CERT-1.0-REPORT.md](https://github.com/JaviLianes8/weblinking/blob/main/CERT-1.0-REPORT.md).
+checked against `requests`, `httplink`, `ietfparse` and the `http-link-header` package
+for Node.js; see [CERT-1.0-REPORT.md](https://github.com/JaviLianes8/weblinking/blob/main/CERT-1.0-REPORT.md).
 
 ## Documentation
 
