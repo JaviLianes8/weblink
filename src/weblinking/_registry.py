@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ._chars import ascii_lower
 from ._errors import need_str
 
 # Names from the IANA "Link Relation Types" registry
@@ -147,9 +148,6 @@ REGISTERED_RELATIONS: frozenset[str] = frozenset(
 )
 
 
-_ASCII_LOWER = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
-
-
 def is_registered(relation_type: str) -> bool:
     """True when ``relation_type`` is in the IANA registry, compared case-insensitively.
 
@@ -168,4 +166,4 @@ def normalise_rel(relation_type: str) -> str:
     case-insensitively, character by character. Only ASCII letters fold, so a look-alike
     such as the Kelvin sign never matches a "k".
     """
-    return relation_type.translate(_ASCII_LOWER)
+    return ascii_lower(relation_type)

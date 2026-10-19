@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from ._chars import COMPONENTS, has_scheme
-from ._errors import LinkError, need_str, quote
+from ._errors import LinkError, need_str, quote_uri
 
 # RFC 3986 Appendix B without the scheme group.
 _NO_SCHEME = re.compile(r"(?://([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?", re.S)
@@ -50,7 +50,7 @@ def absolute_base(base: object) -> str:
     """``base`` as a plain ``str`` once it is known to start with a scheme."""
     base = need_str(base, "base")
     if not has_scheme(base):
-        raise LinkError(f"base {quote(base)} is not an absolute URI")
+        raise LinkError(f"base {quote_uri(base)} is not an absolute URI")
     return base
 
 

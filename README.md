@@ -116,7 +116,8 @@ curl -sI "https://api.github.com/repos/python/cpython/tags?per_page=5" | weblink
 weblinking --base https://example.com/a/ '<../b>; rel="up"'
 ```
 
-`--strict` rejects input outside RFC 8288; errors exit with status 2.
+`--strict` rejects input outside RFC 8288; errors exit with status 2. When the reader
+stops early (`| head`), the command stops quietly with status 1.
 
 ## API
 
@@ -124,13 +125,13 @@ weblinking --base https://example.com/a/ '<../b>; rel="up"'
 | --- | --- |
 | `parse(header, *, strict=False)` | Field value, or list of them, to `list[Link]` |
 | `build(links)` | `Link` objects to a field value, refusing unsafe input |
-| `Link(uri, params)` | Immutable link: `uri`, `pairs`, `params`, `get`, `get_all`, `rel`, `rels`, `has_rel`, `rev`, `anchor`, `title`, `type`, `media`, `hreflang`, `hreflangs`, `resolve`, `context` |
+| `Link(uri, params=())` | Immutable link: `uri`, `pairs`, `params`, `get`, `get_all`, `rel`, `rels`, `has_rel`, `rev`, `anchor`, `title`, `type`, `media`, `hreflang`, `hreflangs`, `resolve`, `context` |
 | `LinkError` | `ValueError` for input outside the grammar, with `message` and `position` |
-| `find(links, rel)` / `find_all(links, rel)` | The first link, or every link, with a relation type |
+| `find(links, relation_type)` / `find_all(links, relation_type)` | The first link, or every link, with a relation type |
 | `resolve_uri(reference, base)` | RFC 3986 section 5.2 resolution (strict form) |
-| `decode_ext_value(text)` / `encode_ext_value(text, language)` | RFC 8187 values such as `title*` |
+| `decode_ext_value(text)` / `encode_ext_value(value, language="")` | RFC 8187 values such as `title*` |
 | `ExtValue` | Decoded value, language tag and charset |
-| `REGISTERED_RELATIONS` / `is_registered(rel)` | Names in the IANA link relation registry |
+| `REGISTERED_RELATIONS` / `is_registered(relation_type)` | Names in the IANA link relation registry |
 
 ## Standards
 
@@ -143,7 +144,8 @@ weblinking --base https://example.com/a/ '<../b>; rel="up"'
   is accepted in any case (`rel=Next`), since section 2.1.1 compares them that way.
   Targets and anchors get a structural RFC 3986 URI-reference check; the inside of an
   IP literal is not checked further.
-- RFC 8187: UTF-8 and ISO-8859-1 ext-values, never quoted when built.
+- RFC 8187: UTF-8 and ISO-8859-1 ext-values (other charsets are refused, and the
+  language tag is checked lightly rather than against RFC 5646), never quoted when built.
 - RFC 3986 section 5: every example of section 5.4 is part of the test suite.
 - The IANA "Link Relation Types" registry as of 2026-06-12. One registered name,
   `openid2.local_id`, falls outside the `reg-rel-type` rule; strict mode accepts it.
@@ -168,17 +170,17 @@ Checked on 2026-10-19 by running each one:
 `weblinking` does this one header, both directions, with strict and tolerant reading,
 RFC 8187 values, RFC 3986 resolution, full type hints and no dependencies. Its parser is
 checked against `requests`, `httplink`, `ietfparse` and the `http-link-header` package
-for Node.js; see [CERT-1.0-REPORT.md](https://github.com/JaviLianes8/weblinking/blob/main/CERT-1.0-REPORT.md).
+for Node.js; see [CERT-1.0-REPORT.md](https://github.com/JaviLianes8/weblink/blob/main/CERT-1.0-REPORT.md).
 
 ## Documentation
 
-- [GUIDE.md](https://github.com/JaviLianes8/weblinking/blob/main/GUIDE.md): every rule the library follows, the errors it
+- [GUIDE.md](https://github.com/JaviLianes8/weblink/blob/main/GUIDE.md): every rule the library follows, the errors it
   raises and what is stable.
-- [CHANGELOG.md](https://github.com/JaviLianes8/weblinking/blob/main/CHANGELOG.md): what changed in each release.
+- [CHANGELOG.md](https://github.com/JaviLianes8/weblink/blob/main/CHANGELOG.md): what changed in each release.
 
 ## License
 
-MIT. See [LICENSE](https://github.com/JaviLianes8/weblinking/blob/main/LICENSE).
+MIT. See [LICENSE](https://github.com/JaviLianes8/weblink/blob/main/LICENSE).
 
 ## Links
 

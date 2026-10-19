@@ -1,11 +1,12 @@
 """Independent Link header parsers as oracles: httplink, ietfparse, requests and the
 http-link-header package for Node.js.
 
-None is a dependency. Each test skips when its oracle is missing: `pip install
-httplink==0.2.0 ietfparse==1.9.0 requests==2.34.2` and `npm install --prefix
-tests/upstream http-link-header@1.1.4` (the folder is ignored by git). The headers come
-from the grammar generator in `header_gen.py`; where an oracle departs from RFC 8288 the
-inputs it cannot read are left out by a stated rule, and that rule is asserted too.
+None is a runtime dependency. Each test skips when its oracle is missing: the `dev` extra
+installs httplink 0.2.0, ietfparse 1.9.0 and requests 2.34.2, and `npm install --prefix
+tests/upstream http-link-header@1.1.4` the Node.js one (the folder is ignored by git).
+The headers come from the grammar generator in `header_gen.py`; where an oracle departs
+from RFC 8288 the inputs it cannot read are left out by a stated rule, and that rule is
+asserted too.
 """
 
 from __future__ import annotations

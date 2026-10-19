@@ -10,7 +10,7 @@ import pytest
 from weblinking._cli import field_values, main
 
 # A response head shaped like `curl -sI` output; the Link value is the live header
-# https://api.github.com/repos/JaviLianes8/weblinking/commits?per_page=1&page=1 returned on
+# https://api.github.com/repos/JaviLianes8/weblink/commits?per_page=1&page=1 returned on
 # 2026-10-13.
 HEAD = (
     "HTTP/2 200\r\n"

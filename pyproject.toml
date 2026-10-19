@@ -31,17 +31,29 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy", "pytest", "pytest-timeout", "build", "twine"]
+# The reference packages the tests compare against, at the versions they pin.
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-timeout",
+    "build",
+    "twine",
+    "rfc3986==2.0.0",
+    "httplink==0.2.0",
+    "ietfparse==1.9.0",
+    "requests==2.34.2",
+]
 
 [project.scripts]
 weblinking = "weblinking._cli:main"
 
 [project.urls]
 Homepage = "https://lianes8studio.com"
-Documentation = "https://github.com/JaviLianes8/weblinking/blob/main/GUIDE.md"
-Source = "https://github.com/JaviLianes8/weblinking"
-Issues = "https://github.com/JaviLianes8/weblinking/issues"
-Changelog = "https://github.com/JaviLianes8/weblinking/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/JaviLianes8/weblink/blob/main/GUIDE.md"
+Source = "https://github.com/JaviLianes8/weblink"
+Issues = "https://github.com/JaviLianes8/weblink/issues"
+Changelog = "https://github.com/JaviLianes8/weblink/blob/main/CHANGELOG.md"
 LinkedIn = "https://www.linkedin.com/in/jlianes/"
 Funding = "https://buymeacoffee.com/jlianesglrs"
 

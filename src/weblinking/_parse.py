@@ -6,7 +6,7 @@ from collections.abc import Iterable
 
 from ._chars import LENIENT_WS, OWS, is_qdtext, is_quoted_pair_char, is_token
 from ._check import check_link
-from ._errors import LinkError
+from ._errors import LinkError, need_str
 from ._model import Link
 
 # A parameter name ends at whitespace, "=", ";" or "," (RFC 8288 Appendix B.3 step 5).
@@ -25,7 +25,8 @@ def parse(header: str | Iterable[str], *, strict: bool = False) -> list[Link]:
     (a registered relation type is accepted in any case), as do a missing or repeated
     ``rel``, a repeated ``media``, ``title``, ``title*`` or ``type``, relation types that
     are neither registered nor ``reg-rel-type`` nor absolute URIs, targets and anchors
-    that are not URI references, and starred values that are not RFC 8187 ext-values.
+    that are not URI references, and starred values :func:`decode_ext_value` refuses
+    (it reads UTF-8 and ISO-8859-1 only and checks the language tag lightly).
     Its ``position`` is the offset in the failing line. ``TypeError`` is raised for
     ``bytes`` and for lines that are not ``str``.
 
@@ -43,9 +44,9 @@ def parse(header: str | Iterable[str], *, strict: bool = False) -> list[Link]:
     lines = [header] if isinstance(header, str) else list(header)
     links: list[Link] = []
     for line in lines:
-        if not isinstance(line, str):
-            raise TypeError(f"header lines must be str, not {type(line).__name__}")
-        links.extend(_Line(line, strict).links())
+        # A str subclass is read as the text it holds, never through its own methods.
+        text = need_str(line, "header lines")
+        links.extend(_Line(text, strict).links())
     return links
 
 

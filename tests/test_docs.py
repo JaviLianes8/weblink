@@ -58,7 +58,7 @@ def test_every_guide_example_runs_and_prints_its_comment() -> None:
 
 def test_the_readme_links_absolutely_to_the_guide_changelog_and_license() -> None:
     for name in ("GUIDE.md", "CHANGELOG.md", "LICENSE"):
-        assert f"(https://github.com/JaviLianes8/weblinking/blob/main/{name})" in README
+        assert f"(https://github.com/JaviLianes8/weblink/blob/main/{name})" in README
     assert not re.search(r"\]\((?!https://)", README), "relative link in README"
 
 

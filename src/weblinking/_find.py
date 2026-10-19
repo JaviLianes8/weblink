@@ -12,6 +12,7 @@ from ._registry import normalise_rel
 def find_all(links: Iterable[Link], relation_type: str) -> list[Link]:
     """Every link carrying ``relation_type``, in order (see :meth:`Link.has_rel`).
 
+    >>> from weblinking import find_all, parse
     >>> links = parse('</1>; rel="prev first", </3>; rel=next, </9>; rel=last')
     >>> [link.uri for link in find_all(links, "FIRST")]
     ['/1']
@@ -25,6 +26,7 @@ def find(links: Iterable[Link], relation_type: str) -> Link | None:
     Relation types compare without ASCII case. ``TypeError`` is raised when
     ``relation_type`` is not a ``str`` or an item of ``links`` is not a :class:`Link`.
 
+    >>> from weblinking import find, parse
     >>> find(parse('<https://api.test/?page=2>; rel="next"'), "next").uri
     'https://api.test/?page=2'
     >>> find(parse('<https://api.test/?page=2>; rel="next"'), "prev") is None

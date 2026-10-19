@@ -32,6 +32,10 @@ Link("/a", {"rel": 1})
 encode_ext_value(b"x")
 parse(["</a>; rel=next", "</b>; rel=prev"], strict=True)
 Link("/a", [("rel", "next")])
+Link("/b", [["rel", "next"]])
+import json
+pairs: list[list[str]] = json.loads('[["rel", "next"]]')
+Link("/a", pairs)
 """
 
 
@@ -85,7 +89,8 @@ def test_misuse_is_rejected(mypy_output: str) -> None:
 
 def test_documented_calls_type_check(mypy_output: str) -> None:
     assert "snippet.py:20:" not in mypy_output, mypy_output
-    assert "snippet.py:21:" not in mypy_output, mypy_output
+    for line in range(21, 26):
+        assert f"snippet.py:{line}:" not in mypy_output, mypy_output
 
 
 def _revealed(output: str, line: int) -> str:

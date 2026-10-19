@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
+import os
 import re
 import sys
 from collections.abc import Sequence
@@ -47,10 +49,27 @@ def main(
         print(f"weblinking: {error}", file=sys.stderr)
         return 2
     rows = [{"uri": link.uri, "rels": list(link.rels), "params": link.pairs} for link in links]
-    # ASCII output cannot fail on a console or pipe whose encoding lacks a character.
-    json.dump(rows, out, indent=2, ensure_ascii=True)
-    out.write("\n")
+    try:
+        # ASCII output cannot fail on a console or pipe whose encoding lacks a character.
+        json.dump(rows, out, indent=2, ensure_ascii=True)
+        out.write("\n")
+        out.flush()
+    except OSError as error:
+        # A reader that stops early (`| head`) closes the pipe: POSIX reports EPIPE,
+        # Windows EINVAL. That is no fault of the input, so stop quietly.
+        if not isinstance(error, BrokenPipeError) and error.errno != errno.EINVAL:
+            raise
+        _silence(out)
+        return 1
     return 0
+
+
+def _silence(out: TextIO) -> None:
+    """Point a closed standard output at the null device, so the exit flush stays quiet."""
+    if out is sys.stdout:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        os.close(devnull)
 
 
 def field_values(text: str) -> list[str]:

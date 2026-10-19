@@ -31,11 +31,13 @@ class ExtValue(NamedTuple):
 def decode_ext_value(text: str) -> ExtValue:
     """Decode an RFC 8187 ``ext-value`` such as ``UTF-8'de'n%c3%a4chstes``.
 
-    Charset names compare case-insensitively; UTF-8 and ISO-8859-1 are read. Raises
-    :class:`LinkError` for a missing part, an unknown charset, a language that is not
-    built from letters, digits and hyphens, a character outside ``attr-char``, a broken
-    percent escape, or bytes the charset cannot decode; ``TypeError`` when ``text`` is
-    not a ``str``.
+    Charset names compare case-insensitively; only UTF-8 and ISO-8859-1 are read, so
+    another charset the RFC 8187 grammar allows (``US-ASCII``) is refused, and so are
+    escaped octets the charset cannot decode. The language tag is checked lightly
+    (letters, digits and hyphens, not starting with a hyphen), not against RFC 5646.
+    Raises :class:`LinkError` for a missing part, such a charset or language, a character
+    outside ``attr-char`` or a broken percent escape; ``TypeError`` when ``text`` is not a
+    ``str``.
 
     >>> decode_ext_value("UTF-8'de'n%c3%a4chstes%20Kapitel")
     ExtValue(value='nächstes Kapitel', language='de', charset='UTF-8')

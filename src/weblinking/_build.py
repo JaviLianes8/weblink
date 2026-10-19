@@ -16,7 +16,7 @@ def build(links: Iterable[Link]) -> str:
     Values are quoted and escaped; RFC 8187 starred values (``title*``) are written bare,
     as RFC 8187 requires. Raises :class:`LinkError` for a link :func:`parse` would reject
     in strict mode (no ``rel``, a target that is not a URI reference, a name that is not
-    a token, a starred value that is not an ext-value) and for values holding control
+    a token, a starred value :func:`decode_ext_value` refuses) and for values holding control
     characters or non-ASCII text, which would break or inject header lines: encode such
     text with :func:`encode_ext_value` and send it as ``title*``. ``TypeError`` is raised
     for anything but an iterable of :class:`Link`. No links give the empty string.

@@ -1,4 +1,8 @@
-"""Every docstring example runs and prints what it shows; every public name has one."""
+"""Every docstring example runs and prints what it shows; every public name has one.
+
+Each example runs with the globals of its own module, as `pytest --doctest-modules` and
+`doctest.testmod` run it, so an example that forgets an import fails here too.
+"""
 
 from __future__ import annotations
 
@@ -25,14 +29,14 @@ def test_every_docstring_example_passes() -> None:
     seen: set[str] = set()
     examples = 0
     for module in MODULES:
-        for test in finder.find(module, globs=dict(vars(weblinking))):
+        for test in finder.find(module):
             if test.name in seen:
                 continue
             seen.add(test.name)
             examples += len(test.examples)
             runner.run(test)
     assert runner.failures == 0
-    assert examples >= 27
+    assert examples >= 50
 
 
 def test_every_public_name_has_a_runnable_example() -> None:
@@ -45,8 +49,10 @@ def test_every_public_name_has_a_runnable_example() -> None:
         assert ">>>" in (inspect.getdoc(obj) or ""), name
 
 
-def test_the_main_link_methods_have_examples() -> None:
-    for name in ("get", "get_all", "has_rel", "rels", "resolve", "context"):
+def test_every_link_member_has_an_example() -> None:
+    members = [name for name in dir(weblinking.Link) if not name.startswith("_")]
+    assert len(members) == 17
+    for name in members:
         assert ">>>" in (inspect.getdoc(getattr(weblinking.Link, name)) or ""), name
 
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from ._chars import has_scheme, is_token, is_uri_reference
-from ._errors import LinkError, quote
+from ._errors import LinkError, quote, quote_uri
 from ._ext import decode_ext_value
 from ._model import Link
 from ._registry import is_registered
@@ -20,7 +20,7 @@ _SINGLE = ("rel", "media", "title", "title*", "type")
 def check_link(link: Link) -> None:
     """Raise :class:`LinkError` when ``link`` breaks the RFC 8288 rules for a link-value."""
     if not is_uri_reference(link.uri):
-        raise LinkError(f"target {quote(link.uri)} is not a URI reference")
+        raise LinkError(f"target {quote_uri(link.uri)} is not a URI reference")
     names = [name for name, _ in link.pairs]
     for name in names:
         if not is_token(name):
@@ -34,7 +34,7 @@ def check_link(link: Link) -> None:
         if name in ("rel", "rev"):
             check_relation_types(name, value)
         elif name == "anchor" and not is_uri_reference(value):
-            raise LinkError(f"anchor {quote(value)} is not a URI reference")
+            raise LinkError(f"anchor {quote_uri(value)} is not a URI reference")
         elif name.endswith("*"):
             decode_ext_value(value)
 

@@ -97,7 +97,7 @@ def test_wrong_argument_types_raise_type_error(call: Callable[[], object]) -> No
 
 
 def test_lists_are_accepted_as_pairs() -> None:
-    assert Link("/a", [["rel", "next"]]) == Link("/a", {"rel": "next"})  # type: ignore[list-item]
+    assert Link("/a", [["rel", "next"]]) == Link("/a", {"rel": "next"})
 
 
 def test_str_subclasses_are_stored_as_plain_str() -> None:

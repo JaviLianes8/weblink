@@ -29,7 +29,8 @@ strings and whitespace) and raises `LinkError` at the first problem. It also enf
 rules of RFC 8288 sections 3.3 and 3.4: a `rel` is required; `rel`, `media`, `title`,
 `title*` and `type` may appear once; relation types (in `rel` and `rev`) are registered
 names, `reg-rel-type` names in lower case, or absolute URIs; targets and anchors are
-RFC 3986 URI references; starred values are RFC 8187 ext-values and are not quoted. A
+RFC 3986 URI references; starred values are not quoted and must decode by the rules of
+`decode_ext_value` below. A
 registered relation type is accepted in any case (`rel=Next`), since RFC 8288 compares
 registered names without case. What strict mode accepts, tolerant mode reads the same way.
 
@@ -49,20 +50,26 @@ or the start of the link when a rule about the whole link failed.
 ## The Link object
 
 `Link(uri, params=())` holds a target and its parameters in order. `params` is a mapping
-or an iterable of `(name, value)` pairs (tuples, or lists as JSON gives them). Names are
-lower-cased; values are kept exactly as given. Links are immutable, hashable, picklable,
-and equal when their target and pairs are equal.
+or an iterable of `(name, value)` pairs (tuples, or lists as JSON gives them). The ASCII
+letters of names are lower-cased and no other character folds, so a name written with
+the Kelvin sign (U+212A) for its `K` never turns into a token such as `key`; values are kept
+exactly as given. Links are immutable (attributes can be neither set nor deleted),
+hashable, picklable, and equal when their target and pairs are equal, in order.
 
 - `uri` is the target as written; `pairs` is every parameter in order, repeats included.
 - `params` is a new dict on each access; when a name repeats, its first value wins.
-- `get_all(name)` gives every raw value of a parameter; `get(name)` gives the first, but
+- `get_all(name)` gives every raw value of a parameter, matching names the same way;
+  `get(name)` gives the first, but
   prefers a decodable RFC 8187 `name*` form as RFC 8288 section 3.4 asks (only the
   first starred value is tried; when it cannot be decoded the plain value is used).
-- `rel` is the first raw `rel` value; `rels` splits it and lower-cases the ASCII letters
-  of each type; `has_rel(type)` compares the same way. Only ASCII letters fold, so a look
+- `rel` is the first raw `rel` value (a `rel*` parameter never replaces it); `rels` splits
+  it on runs of spaces and tabs (and the CR and LF tolerant parsing skips, never other
+  whitespace such as a no-break space) and lower-cases the ASCII letters of each type;
+  `has_rel(relation_type)` compares the same way. Only ASCII letters fold, so a look
   alike such as the Kelvin sign never matches `k`. Extension types (absolute URIs)
   compare without case too, as RFC 8288 section 2.1.2 says.
-- `rev`, `anchor`, `type`, `media` and `hreflang` give the first raw value;
+- `rev`, `anchor`, `type`, `media` and `hreflang` give the first raw value (so the
+  first `anchor` is the context);
   `hreflangs` gives every `hreflang`; `title` is `get("title")`.
 
 ```python
@@ -79,15 +86,17 @@ print(link.hreflang, link.hreflangs, link.has_rel("ALTERNATE"))
 # de ('de', 'de-AT') True
 ```
 
-`find(links, type)` returns the first link carrying a relation type, or `None`;
-`find_all(links, type)` returns all of them in order.
+`find(links, relation_type)` returns the first link carrying a relation type, or `None`;
+`find_all(links, relation_type)` returns all of them in order.
 
 ## RFC 8187 values
 
 `decode_ext_value(text)` reads `charset'language'value-chars` into an `ExtValue` with
 `value`, `language` and `charset`. UTF-8 and ISO-8859-1 are read, in any case; `charset`
-is reported as `"UTF-8"` or `"ISO-8859-1"`. The language is checked lightly (letters,
-digits and hyphens, not starting with a hyphen). `encode_ext_value(text, language="")`
+is reported as `"UTF-8"` or `"ISO-8859-1"`. Other charsets the RFC 8187 grammar allows,
+such as `US-ASCII`, are refused, and so are escaped octets the charset cannot decode. The
+language is checked lightly (letters, digits and hyphens, not starting with a hyphen),
+not against the full RFC 5646 grammar. `encode_ext_value(value, language="")`
 writes UTF-8, percent-encoding every octet outside `attr-char` with upper-case hex.
 
 ```python
@@ -143,7 +152,7 @@ except LinkError as error:
 ## Relation types
 
 `REGISTERED_RELATIONS` is the frozenset of the 134 names in the IANA "Link Relation
-Types" registry as updated on 2026-06-12, all lower case. `is_registered(type)` looks a
+Types" registry as updated on 2026-06-12, all lower case. `is_registered(relation_type)` looks a
 name up without ASCII case. One registered name, `openid2.local_id`, falls outside the
 `reg-rel-type` rule; strict mode accepts it because it is registered.
 
@@ -160,7 +169,9 @@ print(is_registered("Next"), is_registered("openid2.local_id"), "preload" in REG
   rules above. `message` is the reason; `position` is the offset in the line for
   `parse(..., strict=True)` and `None` elsewhere. Messages quote at most 80 characters of
   the offending text (fewer when it needs escapes) and then give its length, so a huge
-  input never ends up whole in a log line.
+  input never ends up whole in a log line. When the text is a target, an anchor or a
+  base URI, its userinfo and its query show as `***`, since credentials, tokens and
+  signatures travel there.
 - `TypeError` is raised for arguments of the wrong type: `bytes` instead of text, a name
   that is not a `str`, a `Link` where an iterable of links is expected, an item that is
   not a `Link`, and so on. Tolerant parsing never raises `LinkError`.
@@ -172,7 +183,9 @@ objects with `uri`, `rels` and `params` (the pairs). Without `HEADER` it reads s
 input as ISO-8859-1 octets: either a bare header value or a response head such as
 `curl -sI` prints. In a head only `Link` fields count, folded lines continue the field
 before them, the body after the blank line is ignored and, after redirects, the last
-response wins. Errors print `weblinking: <message>` and exit with status 2.
+response wins. Errors print `weblinking: <message>` and exit with status 2. When the
+reader closes the pipe early (`weblinking ... | head`), the command stops quietly with
+status 1.
 `python -m weblinking` runs the same command.
 
 ## What is stable
