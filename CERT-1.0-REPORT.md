@@ -228,3 +228,33 @@ Gates on Elena's PC from a fresh clone of the fix commit, a new venv with
 and `pytest` (362 passed, no skips) all exit 0.
 
 Disputed findings: none.
+
+### Round 3 (on c7afd6b)
+
+Lens e re-ran its mutation round on the round 2 fixes and reported eight surviving
+mutants; every one was fixed and none is disputed. They are all missing contracts, not
+behaviour bugs: the library already gave the right answer for each input, so no code,
+docs or CHANGELOG entry changed. The contracts are in `tests/test_qa_round3.py`, and each
+of the nine mutants of the report (E5 has two) was applied again to the source, one at a
+time, and killed by that file.
+
+| Lens | Finding | What changed |
+| --- | --- | --- |
+| e E1 | Survivor: `quote_uri` kept the query after a userinfo | `test_redacted_targets_show_exactly_the_safe_parts`: `https://alice:pw@h/ p?token=...` shows `'https://***@h/ p?***'` |
+| e E2 | Survivor: the cut took the later of `?` and `#` | Same test: `/x y?tok=...#frag` shows `'/x y?***'`, and `/x y#frag?tok=...` shows `'/x y#***'` |
+| e E3 | Survivor: a `?` or `#` at index 0 was ignored | Same test: `?token=... x` shows `'?***'`, `#tok=... x` shows `'#***'` |
+| e E4 | Survivor: the split used the first `@` | Same test: `https://alice@b:...@h/ p` shows `'https://***@h/ p'` |
+| e E5 | Survivors: the scheme was searched for past the start of the value | Same test: `alice:...-https://x@h/ p` and `alice:.../https://x@h/ p` show `'***@h/ p'` |
+| e E6 | Survivor: only exact tuples were accepted as pairs | `test_tuple_subclass_pairs_are_accepted` (a `namedtuple` pair) |
+| e E7 | Survivor: the scheme pattern dropped digits | Same redaction test: `h2c://alice:...@h/ p` shows `'h2c://***@h/ p'` |
+| e E8 | Survivor: an `@` at index 0 counted as none | Same redaction test: `@h/ p` shows `'***@h/ p'` |
+
+Contracts in commit c071a07.
+
+Gates on Elena's PC from a fresh clone of c071a07, a new venv with
+`pip install -r requirements-dev.txt` (CPython 3.14.2), the fetched sources and
+`http-link-header`, `WEBLINKING_E2E=1` and `WEBLINKING_LIVE=1`: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, `mypy --strict src tests` and `pytest` (373 passed,
+no skips) all exit 0.
+
+Disputed findings: none.
