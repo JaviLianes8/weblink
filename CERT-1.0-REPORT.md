@@ -17,8 +17,9 @@ Progress:
 - [x] Packaging, e2e, every Python (items 8, 10, 13, 14)
 - [x] Gates (item 15)
 - [x] Pull request and trace guard
-- [ ] Five QA lenses report PASS (item 19)
-- [ ] Independent reviewer reports PASS (item 16)
+- [x] Five QA lenses report PASS (item 19)
+- [x] Independent reviewer reports PASS (item 16)
+- [x] Final gates on a fresh clone, QA table and reviewer scorecard recorded
 
 ## Scorecard (author's run; items 16, 17 and 19 belong to other agents)
 
@@ -307,3 +308,47 @@ Gates on Elena's PC from a fresh clone of 9dce64d, a new venv with
 (383 passed, no skips) all exit 0.
 
 Disputed findings: none.
+
+## QA verdicts (item 19)
+
+Each lens ran on its own fresh clone and reported back only; reports are kept in the
+local certification workspace, not in the repository. Lens a returned its round 2
+report as text, with its workspace (a clone at 76db27c and its sweep scripts) kept.
+
+| Lens | Focus | Rounds | Final verdict | Report | Commit |
+| --- | --- | --- | --- | --- | --- |
+| a | API and docs | 2 | PASS | round 2, returned as text | 76db27c |
+| b | Correctness and ground truth | 2 | PASS | `lens-b-r2/REPORT.md` | 76db27c |
+| c | Adversarial and robustness | 3 | PASS | `lens-c-r3/REPORT.md` | c7afd6b |
+| d | Packaging and real e2e | 2 | PASS | `lens-d-r2/REPORT.md` | 76db27c |
+| e | Contract strength (own mutation round) | 6 | PASS | `lens-e-r6/REPORT.md` | eee58e4 |
+
+After 76db27c the source changed only in `_errors.py` and `_model.py`; lens c round 3
+and lens e round 6 cover those changes.
+
+## Independent review (item 16)
+
+One round, at eee58e4, from a fresh GitHub clone on Elena's PC (CPython 3.14.2, a venv
+from `requirements-dev.txt`, the fetched sources matching the manifest).
+
+| # | Item | Result |
+| --- | --- | --- |
+| 1 | Public API reviewed for stability | PASS |
+| 2 | `__all__` exact, no private imports in docs | PASS: 12 exports |
+| 3 | Docstrings with runnable examples, doctests pass | PASS: all 12 exports and 17 `Link` members; 58 doctests over the installed package, 0 failed |
+| 4 | Typed end to end | PASS: `mypy --strict src tests` (42 files), `py.typed` shipped, no `Any` in public hints |
+| 5 | Typed, safe errors | PASS: messages on 1 MB input are 23 to 154 characters; a target with userinfo and query prints as `'https://***@h/ p?***'` |
+| 6 | Contract tests of every public name | PASS |
+| 7 | Real ground truth | PASS: manifest with URL, date and sha256, hand-written data labelled, five oracles |
+| 8 | Real e2e | PASS: throwaway venv consumer run with `-I`, the command gives 0 on a `curl -i` head and 2 on a strict error; no PyPI release, so no upgrade path |
+| 9 | Fuzz, no blowup | PASS: hostile inputs at 20k and 80k repetitions grew 0.7 to 3.8 times |
+| 10 | Supported Pythons | PASS: 3.10.19, 3.11.14, 3.12.12, 3.13.11, 3.14.2 and 3.14.2t, 377 passed and 6 opt-in skips each, wheel installed and `src` removed |
+| 11 | README and `twine check --strict` | PASS: claims about other libraries re-checked against PyPI and the libraries |
+| 12 | Dated CHANGELOG section | PASS: `[1.0.0] - 2026-10-19` |
+| 13 | pyproject | PASS: 1.0.0, Production/Stable, 3.10 to 3.14, MIT, Homepage, Source, Issues and Changelog URLs, no dependencies |
+| 14 | sdist and wheel contents | PASS: wheel holds the 14 modules, `py.typed` and `licenses/LICENSE`; sdist holds no fetched or report files |
+| 15 | Gates each exit 0 | PASS: `ruff format --check .`, `ruff check .`, `mypy --strict src`, `mypy --strict src tests`, `pytest` with e2e and live tests (383 passed, 0 skipped) |
+| 16 | Independent review | PASS: this table |
+| 17 | Pull request and trace guard | PASS: PR #3 from `release/1.0.0`, guard clean; merge and publication are done by the orchestrator |
+| 18 | Contracts bite | PASS: 20-row mutation table above, plus the lens e rounds |
+| 19 | Five QA lenses | PASS: table above |
