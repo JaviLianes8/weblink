@@ -221,4 +221,10 @@ named test kills it.
 
 The CHANGELOG and the GUIDE describe the new redaction rule and the pair reading.
 
+Gates on Elena's PC from a fresh clone of the fix commit, a new venv with
+`pip install -r requirements-dev.txt` (CPython 3.14.2), the fetched sources and
+`http-link-header` 1.1.4, `WEBLINKING_E2E=1` and `WEBLINKING_LIVE=1`:
+`ruff format --check .`, `ruff check .`, `mypy --strict src`, `mypy --strict src tests`
+and `pytest` (362 passed, no skips) all exit 0.
+
 Disputed findings: none.
