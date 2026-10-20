@@ -258,3 +258,28 @@ Gates on Elena's PC from a fresh clone of c071a07, a new venv with
 no skips) all exit 0.
 
 Disputed findings: none.
+
+### Round 4 (on 9afda5a)
+
+Lens e re-ran its mutation round on the round 3 contracts: all eight round 3 mutants are
+killed, and it reported eight new surviving mutants in three findings. Every one was
+fixed and none is disputed. They are all missing contracts, not behaviour bugs: the
+library already gave the right answer for each input, so no code, docs or CHANGELOG entry
+changed. The contracts are in `tests/test_qa_round4.py`, and each of the eight mutants
+(N1 to N8) was applied again to the source, one at a time, and killed by that file.
+
+| Lens | Finding | What changed |
+| --- | --- | --- |
+| e F1 (N1, N2) | Survivors: the cut took the last `?` or the last `#` | `test_redacted_targets_show_exactly_the_safe_parts`: `/x y?tok=...?b` shows `'/x y?***'`, and `/x y#tok=...#b` shows `'/x y#***'` |
+| e F2 (N3 to N7) | Survivors on the scheme pattern: a leading digit, no `+`, no `.`, no `-`, lower case only | Same test: `svn+ssh://`, `a.b://`, `x-y://` and `HTTPS://` leads are kept before `***@h/ p`, and `1x://alice:...@h/ p` shows `'***@h/ p'` |
+| e F3 (N8) | Survivor: an `@` right after the mark took the userinfo branch | Same test: `/x y?@h` shows `'***'` |
+
+Contracts in commit ca5433d.
+
+Gates on Elena's PC from a fresh clone of ca5433d, a new venv with
+`pip install -r requirements-dev.txt` (CPython 3.14.2), the fetched sources and
+`http-link-header`, `WEBLINKING_E2E=1` and `WEBLINKING_LIVE=1`: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, `mypy --strict src tests` and `pytest` (381 passed,
+no skips) all exit 0.
+
+Disputed findings: none.
