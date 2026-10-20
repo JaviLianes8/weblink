@@ -283,3 +283,27 @@ Gates on Elena's PC from a fresh clone of ca5433d, a new venv with
 no skips) all exit 0.
 
 Disputed findings: none.
+
+### Round 5 (on b63c7f9)
+
+Lens e re-ran its mutation round on the round 4 contracts: findings F1, F2 and F3 are
+fixed (mutants N1 to N8 are all killed by `tests/test_qa_round4.py`, and the original
+repros give the expected output), and 9 of its 10 new probes were killed. It reported one
+new surviving mutant. It was fixed and is not disputed. It is a missing contract, not a
+behaviour bug: the library already kept a one-letter scheme, so no code, docs or
+CHANGELOG entry changed. The mutant was applied again to the source and killed by the new
+cases.
+
+| Lens | Finding | What changed |
+| --- | --- | --- |
+| e G1 (P5) | Survivor: the scheme pattern required two or more characters (`*` changed to `+`), so a one-letter scheme, which RFC 3986 allows, lost its lead | `test_redacted_targets_show_exactly_the_safe_parts`: `a://alice:...@h/ p` shows `'a://***@h/ p'`, and `Z://alice:...@h/ p` shows `'Z://***@h/ p'` |
+
+Contracts in commit 9dce64d.
+
+Gates on Elena's PC from a fresh clone of 9dce64d, a new venv with
+`pip install -r requirements-dev.txt` (CPython 3.14.2), the fetched sources and
+`http-link-header`, `WEBLINKING_E2E=1` and `WEBLINKING_LIVE=1`: `ruff format --check .`,
+`ruff check .`, `mypy --strict src`, `mypy --strict src tests` and `pytest --timeout 300`
+(383 passed, no skips) all exit 0.
+
+Disputed findings: none.
