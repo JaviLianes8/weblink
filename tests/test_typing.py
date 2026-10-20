@@ -12,8 +12,8 @@ import pytest
 SRC = Path(__file__).resolve().parents[1] / "src"
 
 SNIPPET = """
-from weblink import Link, build, decode_ext_value, find, find_all, parse, resolve_uri
-from weblink import REGISTERED_RELATIONS, encode_ext_value, is_registered
+from weblinking import Link, build, decode_ext_value, find, find_all, parse, resolve_uri
+from weblinking import REGISTERED_RELATIONS, encode_ext_value, is_registered
 reveal_type(parse("</a>; rel=next"))
 reveal_type(build([Link("/a", {"rel": "next"})]))
 reveal_type(find([], "next"))
@@ -32,6 +32,10 @@ Link("/a", {"rel": 1})
 encode_ext_value(b"x")
 parse(["</a>; rel=next", "</b>; rel=prev"], strict=True)
 Link("/a", [("rel", "next")])
+Link("/b", [["rel", "next"]])
+import json
+pairs: list[list[str]] = json.loads('[["rel", "next"]]')
+Link("/a", pairs)
 """
 
 
@@ -60,13 +64,13 @@ def mypy_output(tmp_path_factory: pytest.TempPathFactory) -> str:
 def test_functions_return_plain_types(mypy_output: str) -> None:
     revealed = [_revealed(mypy_output, line) for line in range(4, 15)]
     # mypy releases spell a NamedTuple differently; the fallback names the class in all.
-    assert revealed[7].endswith("fallback=weblink._ext.ExtValue]")
+    assert revealed[7].endswith("fallback=weblinking._ext.ExtValue]")
     revealed[7] = "ExtValue"
     assert revealed == [
-        "list[weblink._model.Link]",
+        "list[weblinking._model.Link]",
         "str",
-        "weblink._model.Link | None",
-        "list[weblink._model.Link]",
+        "weblinking._model.Link | None",
+        "list[weblinking._model.Link]",
         "tuple[tuple[str, str], ...]",
         "str | None",
         "tuple[str, ...]",
@@ -85,7 +89,8 @@ def test_misuse_is_rejected(mypy_output: str) -> None:
 
 def test_documented_calls_type_check(mypy_output: str) -> None:
     assert "snippet.py:20:" not in mypy_output, mypy_output
-    assert "snippet.py:21:" not in mypy_output, mypy_output
+    for line in range(21, 26):
+        assert f"snippet.py:{line}:" not in mypy_output, mypy_output
 
 
 def _revealed(output: str, line: int) -> str:

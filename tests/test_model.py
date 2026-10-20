@@ -6,7 +6,7 @@ import pickle
 
 import pytest
 
-from weblink import Link, LinkError, find, find_all, is_registered, parse
+from weblinking import Link, LinkError, find, find_all, is_registered, parse
 
 
 def test_names_are_lower_cased_and_pairs_keep_order() -> None:

@@ -1,6 +1,6 @@
 import pytest
 
-from weblink import Link, parse
+from weblinking import Link, parse
 
 
 def test_single_link_with_rel() -> None:

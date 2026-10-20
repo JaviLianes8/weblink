@@ -3,17 +3,17 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "weblink"
-version = "0.2.0"
+name = "weblinking"
+version = "1.0.0"
 description = "Parse, validate, resolve and build the HTTP Link header (RFC 8288, RFC 8187), typed and zero-dependency"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Javier Lianes", email = "javier@lianes8studio.com" }]
-keywords = ["link", "link-header", "rfc8288", "rfc8187", "web-linking", "pagination", "http", "headers"]
+keywords = ["link", "link-header", "rfc8288", "rfc8187", "rfc3986", "web-linking", "pagination", "http", "headers", "iana"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -31,31 +31,38 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy", "pytest", "build", "twine"]
+# The reference packages the tests compare against, at the versions they pin.
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-timeout",
+    "build",
+    "twine",
+    "rfc3986==2.0.0",
+    "httplink==0.2.0",
+    "ietfparse==1.9.0",
+    "requests==2.34.2",
+]
 
 [project.scripts]
-weblink = "weblink._cli:main"
+weblinking = "weblinking._cli:main"
 
 [project.urls]
 Homepage = "https://lianes8studio.com"
-Repository = "https://github.com/JaviLianes8/weblink"
+Documentation = "https://github.com/JaviLianes8/weblink/blob/main/GUIDE.md"
+Source = "https://github.com/JaviLianes8/weblink"
 Issues = "https://github.com/JaviLianes8/weblink/issues"
 Changelog = "https://github.com/JaviLianes8/weblink/blob/main/CHANGELOG.md"
 LinkedIn = "https://www.linkedin.com/in/jlianes/"
 Funding = "https://buymeacoffee.com/jlianesglrs"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/weblink"]
+packages = ["src/weblinking"]
 
 [tool.hatch.build.targets.sdist]
 # Third-party reference files are fetched locally and never shipped; only their manifest is.
-exclude = [
-    ".github",
-    "IMPROVEMENTS-round*.md",
-    "tests/upstream/*.txt",
-    "tests/upstream/*.csv",
-    "tests/upstream/*.md",
-]
+exclude = [".github", "IMPROVEMENTS-round*.md", "CERT-1.0-*.md", "tests/upstream/*", "!tests/upstream/MANIFEST.json"]
 
 [tool.ruff]
 line-length = 100
@@ -72,3 +79,5 @@ strict = true
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-q"
+timeout = 300
+filterwarnings = ["ignore::DeprecationWarning:rfc3986._mixin"]

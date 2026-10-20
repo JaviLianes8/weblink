@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import errno
 import json
+import os
 import re
 import sys
 from collections.abc import Sequence
@@ -20,9 +22,9 @@ _HEAD = re.compile(r"HTTP/|[!#$%&'*+.^_`|~0-9A-Za-z-]+[ \t]*:")
 def main(
     argv: Sequence[str] | None = None, stdin: TextIO | None = None, stdout: TextIO | None = None
 ) -> int:
-    """Run the ``weblink`` command and return its exit status."""
+    """Run the ``weblinking`` command and return its exit status."""
     parser = argparse.ArgumentParser(
-        prog="weblink",
+        prog="weblinking",
         description="Print the links of a Link header as JSON. Without HEADER, read standard "
         "input: either a bare header value or a response head such as `curl -sI URL` prints.",
     )
@@ -44,13 +46,30 @@ def main(
         if args.base is not None:
             links = [link.resolve(args.base) for link in links]
     except LinkError as error:
-        print(f"weblink: {error}", file=sys.stderr)
+        print(f"weblinking: {error}", file=sys.stderr)
         return 2
     rows = [{"uri": link.uri, "rels": list(link.rels), "params": link.pairs} for link in links]
-    # ASCII output cannot fail on a console or pipe whose encoding lacks a character.
-    json.dump(rows, out, indent=2, ensure_ascii=True)
-    out.write("\n")
+    try:
+        # ASCII output cannot fail on a console or pipe whose encoding lacks a character.
+        json.dump(rows, out, indent=2, ensure_ascii=True)
+        out.write("\n")
+        out.flush()
+    except OSError as error:
+        # A reader that stops early (`| head`) closes the pipe: POSIX reports EPIPE,
+        # Windows EINVAL. That is no fault of the input, so stop quietly.
+        if not isinstance(error, BrokenPipeError) and error.errno != errno.EINVAL:
+            raise
+        _silence(out)
+        return 1
     return 0
+
+
+def _silence(out: TextIO) -> None:
+    """Point a closed standard output at the null device, so the exit flush stays quiet."""
+    if out is sys.stdout:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        os.close(devnull)
 
 
 def field_values(text: str) -> list[str]:

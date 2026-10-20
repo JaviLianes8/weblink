@@ -1,6 +1,6 @@
 """Build the wheel, install it in a throwaway venv and drive the installed package.
 
-Slow and needs the build backend, so it runs only with WEBLINK_E2E=1.
+Slow and needs the build backend, so it runs only with WEBLINKING_E2E=1.
 """
 
 from __future__ import annotations
@@ -18,20 +18,20 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 pytestmark = pytest.mark.skipif(
-    os.environ.get("WEBLINK_E2E") != "1", reason="set WEBLINK_E2E=1 to build and install"
+    os.environ.get("WEBLINKING_E2E") != "1", reason="set WEBLINKING_E2E=1 to build and install"
 )
 
 PROGRAM = r"""
 import importlib.metadata, importlib.resources, pickle
-import weblink
-from weblink import (
+import weblinking
+from weblinking import (
     ExtValue, Link, LinkError, REGISTERED_RELATIONS, build, decode_ext_value,
     encode_ext_value, find, find_all, is_registered, parse, resolve_uri,
 )
 
-assert "site-packages" in weblink.__file__, weblink.__file__
-assert importlib.metadata.version("weblink") == weblink.__version__
-assert importlib.resources.files("weblink").joinpath("py.typed").is_file()
+assert "site-packages" in weblinking.__file__, weblinking.__file__
+assert importlib.metadata.version("weblinking") == weblinking.__version__
+assert importlib.resources.files("weblinking").joinpath("py.typed").is_file()
 
 header = (
     "</TheBook/chapter2>; rel=\"previous\"; title*=UTF-8'de'letztes%20Kapitel, "
@@ -60,6 +60,21 @@ for call in (
         assert isinstance(error, ValueError)
     else:
         raise AssertionError("expected LinkError")
+for wrong in (lambda: find(links, None), lambda: Link("/a", "rel"), lambda: build(links[0])):
+    try:
+        wrong()
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("expected TypeError")
+try:
+    resolve_uri("a", "x" * 10_000)
+except LinkError as error:
+    assert len(str(error)) < 300 and error.position is None
+assert resolve_uri("a b:c", "http://h/x/y") == "http://h/x/a b:c"
+assert Link.__module__ == LinkError.__module__ == "weblinking"
+requires = importlib.metadata.requires("weblinking") or []
+assert requires and all("extra ==" in item for item in requires), requires
 print("e2e ok")
 """
 
@@ -76,15 +91,20 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     dist = tmp_path / "dist"
     built = _run(sys.executable, "-m", "build", "--outdir", dist, ROOT)
     assert built.returncode == 0, built.stderr
-    (wheel,) = dist.glob("weblink-*.whl")
-    (sdist,) = dist.glob("weblink-*.tar.gz")
+    (wheel,) = dist.glob("weblinking-*.whl")
+    (sdist,) = dist.glob("weblinking-*.tar.gz")
     names = zipfile.ZipFile(wheel).namelist()
-    assert "weblink/py.typed" in names
+    assert "weblinking/py.typed" in names
     assert not any(name.startswith(("tests/", "scripts/")) for name in names)
     entry_points = next(name for name in names if name.endswith("entry_points.txt"))
-    assert "weblink = weblink._cli:main" in zipfile.ZipFile(wheel).read(entry_points).decode()
+    assert "weblinking = weblinking._cli:main" in zipfile.ZipFile(wheel).read(entry_points).decode()
     listing = _run(sys.executable, "-m", "tarfile", "-l", sdist).stdout.decode()
-    assert "IMPROVEMENTS-round" not in listing
+    assert "IMPROVEMENTS-round" not in listing and "CERT-1.0" not in listing
+    assert "GUIDE.md" in listing and "LICENSE" in listing and "node_modules" not in listing
+    assert any(name.endswith("licenses/LICENSE") for name in names)
+    metadata = next(name for name in names if name.endswith("METADATA"))
+    text = zipfile.ZipFile(wheel).read(metadata).decode()
+    assert "Version: 1.0.0" in text and "Development Status :: 5 - Production/Stable" in text
     assert "tests/upstream/MANIFEST.json" in listing
     for fetched in ("rfc8288.txt", "rfc8187.txt", "rfc3986.txt", "rfc9110.txt"):
         assert fetched not in listing, fetched
@@ -106,8 +126,8 @@ def test_installed_wheel_end_to_end(tmp_path: Path) -> None:
     assert result.stdout.decode().strip() == "e2e ok"
 
     head = b'HTTP/1.1 200 OK\r\nLink: <../b>; rel="Next"\r\n\r\n'
-    script = bindir / ("weblink.exe" if sys.platform == "win32" else "weblink")
-    for command in ([script], [python, "-m", "weblink"]):
+    script = bindir / ("weblinking.exe" if sys.platform == "win32" else "weblinking")
+    for command in ([script], [python, "-m", "weblinking"]):
         shown = _run(*command, "--base", "https://a.test/x/y", cwd=work, stdin=head)
         assert shown.returncode == 0, shown.stderr
         rows = json.loads(shown.stdout)

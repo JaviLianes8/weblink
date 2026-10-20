@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from ._chars import has_scheme, is_token, is_uri_reference
-from ._errors import LinkError
+from ._errors import LinkError, quote, quote_uri
 from ._ext import decode_ext_value
 from ._model import Link
 from ._registry import is_registered
@@ -20,11 +20,11 @@ _SINGLE = ("rel", "media", "title", "title*", "type")
 def check_link(link: Link) -> None:
     """Raise :class:`LinkError` when ``link`` breaks the RFC 8288 rules for a link-value."""
     if not is_uri_reference(link.uri):
-        raise LinkError(f"target {link.uri!r} is not a URI reference")
+        raise LinkError(f"target {quote_uri(link.uri)} is not a URI reference")
     names = [name for name, _ in link.pairs]
     for name in names:
         if not is_token(name):
-            raise LinkError(f"parameter name {name!r} is not a token")
+            raise LinkError(f"parameter name {quote(name)} is not a token")
     for name in _SINGLE:
         if names.count(name) > 1:
             raise LinkError(f"parameter {name!r} appears more than once")
@@ -34,7 +34,7 @@ def check_link(link: Link) -> None:
         if name in ("rel", "rev"):
             check_relation_types(name, value)
         elif name == "anchor" and not is_uri_reference(value):
-            raise LinkError(f"anchor {value!r} is not a URI reference")
+            raise LinkError(f"anchor {quote_uri(value)} is not a URI reference")
         elif name.endswith("*"):
             decode_ext_value(value)
 
@@ -42,10 +42,10 @@ def check_link(link: Link) -> None:
 def check_relation_types(name: str, value: str) -> None:
     """``relation-type *( 1*SP relation-type )`` of RFC 8288 section 3.3."""
     if not value or value != value.strip(" "):
-        raise LinkError(f"{name} value {value!r} is empty or has outer spaces")
+        raise LinkError(f"{name} value {quote(value)} is empty or has outer spaces")
     for relation_type in value.split(" "):
         if relation_type and not _is_relation_type(relation_type):
-            raise LinkError(f"{name} value {relation_type!r} is not a relation type")
+            raise LinkError(f"{name} value {quote(relation_type)} is not a relation type")
 
 
 def _is_relation_type(text: str) -> bool:

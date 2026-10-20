@@ -13,7 +13,7 @@ import string
 
 import pytest
 
-from weblink import (
+from weblinking import (
     REGISTERED_RELATIONS,
     Link,
     LinkError,
@@ -22,7 +22,7 @@ from weblink import (
     parse,
     resolve_uri,
 )
-from weblink._chars import is_qdtext
+from weblinking._chars import is_qdtext
 
 
 def _section(text: str, title: str, end: str) -> str:

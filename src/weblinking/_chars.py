@@ -16,8 +16,17 @@ SCHEME_CHARS = frozenset(string.ascii_letters + string.digits + "+-.")
 # RFC 8187 section 3.2.1.
 ATTR_CHARS = frozenset(string.ascii_letters + string.digits + "!#$&+-.^_`|~")
 HEXDIGITS = frozenset(string.hexdigits)
+# RFC 8288 compares relation types and parameter names folding ASCII letters only, so a
+# look-alike such as the Kelvin sign never turns into a token character.
+_ASCII_LOWER = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
+# RWS of RFC 9110, plus the CR and LF that tolerant parsing also skips.
+SPACES = re.compile(r"[ \t\r\n]+")
 # RFC 3986 Appendix B, with groups for scheme, authority, path, query and fragment.
 COMPONENTS = re.compile(r"(?:([^:/?#]+):)?(?://([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?", re.S)
+
+
+def ascii_lower(text: str) -> str:
+    return text.translate(_ASCII_LOWER)
 
 
 def is_token(text: str) -> bool:

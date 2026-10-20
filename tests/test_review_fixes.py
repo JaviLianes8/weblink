@@ -8,8 +8,8 @@ import sys
 
 import pytest
 
-from weblink import LinkError, parse, resolve_uri
-from weblink._cli import field_values, main
+from weblinking import LinkError, parse, resolve_uri
+from weblinking._cli import field_values, main
 
 
 @pytest.mark.parametrize("rel", ["X-Custom", "nExt-thing", "Ab"])

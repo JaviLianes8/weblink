@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from ._chars import COMPONENTS, has_scheme
-from ._errors import LinkError
+import re
 
+from ._chars import COMPONENTS, has_scheme
+from ._errors import LinkError, need_str, quote_uri
+
+# RFC 3986 Appendix B without the scheme group.
+_NO_SCHEME = re.compile(r"(?://([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?", re.S)
 _Parts = tuple[str | None, str | None, str, str | None, str | None]
 
 
@@ -12,11 +16,20 @@ def resolve_uri(reference: str, base: str) -> str:
     """Resolve a URI reference against an absolute base URI (RFC 3986 section 5.2).
 
     The strict algorithm is used: a reference with a scheme is never treated as
-    relative, so ``http:g`` stays ``http:g``. Raises :class:`LinkError` when ``base``
-    has no scheme, since only an absolute URI can serve as a base.
+    relative, so ``http:g`` stays ``http:g``. Text before the first colon that is not a
+    scheme (a letter, then letters, digits, ``+``, ``-`` or ``.``) does not make one: such
+    a reference is read as a relative path. The result is not normalised further
+    (case and percent escapes are kept). Raises :class:`LinkError` when ``base`` has no
+    scheme, since only an absolute URI can serve as a base, and ``TypeError`` when an
+    argument is not a ``str``.
+
+    >>> resolve_uri("../g?y#s", "http://a/b/c/d;p?q")
+    'http://a/b/g?y#s'
+    >>> resolve_uri("http:g", "http://a/b/c/d;p?q")
+    'http:g'
     """
-    if not has_scheme(base):
-        raise LinkError(f"base {base!r} is not an absolute URI")
+    reference = need_str(reference, "reference")
+    base = absolute_base(base)
     r_scheme, r_auth, r_path, r_query, r_frag = _split(reference)
     b_scheme, b_auth, b_path, b_query, _ = _split(base)
     if r_scheme is not None:
@@ -33,10 +46,24 @@ def resolve_uri(reference: str, base: str) -> str:
     return _join(b_scheme, b_auth, path, r_query, r_frag)
 
 
+def absolute_base(base: object) -> str:
+    """``base`` as a plain ``str`` once it is known to start with a scheme."""
+    base = need_str(base, "base")
+    if not has_scheme(base):
+        raise LinkError(f"base {quote_uri(base)} is not an absolute URI")
+    return base
+
+
 def _split(uri: str) -> _Parts:
     match = COMPONENTS.fullmatch(uri)
     assert match is not None  # every group is optional, so any string matches
     scheme, authority, path, query, fragment = match.groups()
+    if scheme is not None and not has_scheme(scheme + ":"):
+        # Not a URI reference; reading the colon as a scheme would return it unresolved.
+        match = _NO_SCHEME.fullmatch(uri)
+        assert match is not None
+        authority, path, query, fragment = match.groups()
+        return None, authority, path, query, fragment
     return scheme, authority, path, query, fragment
 
 

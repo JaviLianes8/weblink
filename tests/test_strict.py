@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from weblink import Link, LinkError, parse
+from weblinking import Link, LinkError, parse
 
 
 def _offset(header: str) -> int | None:

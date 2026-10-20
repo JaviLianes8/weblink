@@ -1,4 +1,4 @@
-# weblink improvement round
+# weblinking improvement round
 
 Progress:
 - [x] Brainstorm ranked improvements (this file)
@@ -16,7 +16,7 @@ Progress:
 - [x] Gates: ruff format, ruff check, mypy --strict, pytest
 - [x] Mutation run: removing guarded logic makes the suite fail
 - [x] Independent review findings fixed with regression tests
-- [ ] Pull request opened, guard clean
+- [x] Pull request opened, guard clean
 
 ## Starting point
 
@@ -94,7 +94,7 @@ sources below:
 7. **Relation types.** `REGISTERED_RELATIONS`, `is_registered`, `rels` lower-cases
    ASCII letters of every type (section 2.1.2 compares extension URIs case-insensitively too),
    `find` and `find_all`.
-8. **Command line.** `weblink` reads a header value or a whole `curl -i` dump and prints
+8. **Command line.** `weblinking` reads a header value or a whole `curl -i` dump and prints
    the links as JSON, with `--base` and `--strict`. Debugging pagination from a shell is
    the one place a parser is needed without Python code around it.
 9. **Contracts.** The RFC examples, the 3986 resolution table, the RFC 8187 examples, the
@@ -117,10 +117,10 @@ sources below:
 
 - Gates on CPython 3.13.2 (this PC) and 3.14.6 (a second Windows machine, fresh clone):
   `ruff format --check .`, `ruff check .`, `mypy --strict src` (and `src tests`) and
-  `pytest`. With `WEBLINK_E2E=1` the installed-wheel test builds the wheel and sdist,
+  `pytest`. With `WEBLINKING_E2E=1` the installed-wheel test builds the wheel and sdist,
   checks their contents (no planning notes, no fetched files, the manifest, the fetch
   script and the entry point present), installs the wheel in a fresh venv and drives the
-  API, the `weblink` script and `python -m weblink` from an empty folder. Without the
+  API, the `weblinking` script and `python -m weblinking` from an empty folder. Without the
   fetched files their tests skip and the rest of the suite passes.
 - Guarded logic was removed one piece at a time (98 mutations). The first run left three
   alive: the quote and backslash exclusion in the qdtext helper (only reachable through
