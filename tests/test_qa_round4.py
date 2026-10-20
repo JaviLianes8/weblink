@@ -20,6 +20,9 @@ SECRET = "hunter2SECRET"
         (f"a.b://alice:{SECRET}@h/ p", "'a.b://***@h/ p'"),
         (f"x-y://alice:{SECRET}@h/ p", "'x-y://***@h/ p'"),
         (f"HTTPS://alice:{SECRET}@h/ p", "'HTTPS://***@h/ p'"),
+        # RFC 3986 allows a scheme of a single letter.
+        (f"a://alice:{SECRET}@h/ p", "'a://***@h/ p'"),
+        (f"Z://alice:{SECRET}@h/ p", "'Z://***@h/ p'"),
         # A scheme cannot start with a digit, so such a lead is hidden with the userinfo.
         (f"1x://alice:{SECRET}@h/ p", "'***@h/ p'"),
         # An '@' right after the mark is part of the hidden tail.
