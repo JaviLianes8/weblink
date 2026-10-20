@@ -200,3 +200,25 @@ Fix commit c8eb48a. Gates on this PC from a fresh clone of that commit, a new ve
 and `pytest` (347 passed, no skips) all exit 0.
 
 Disputed findings: none.
+
+### Round 2 (on 76db27c)
+
+Lenses c and e re-checked the round 1 fixes and reported seven findings; every one was
+fixed and none is disputed. The contracts are in `tests/test_qa_round2.py`. The behaviour
+findings (N1, N2, N3) failed on 76db27c first and pass now; the survivor findings (N08,
+N14, N19, N30) were checked by applying each mutant again to the fixed tree, where the
+named test kills it.
+
+| Lens | Finding | What changed |
+| --- | --- | --- |
+| c N1 | Redaction trusted the component split of an invalid value, so a password holding `#`, `?` or `/`, or a scheme typo such as `https//`, was printed | `quote_uri` no longer splits the value: it hides everything before the last `@` and everything after the first `?` or `#`, keeping only a leading `scheme://` (never a lone `name:` prefix, which may be a user name): `test_userinfo_stays_hidden_whatever_the_value_looks_like` with the four inputs of the report plus `alice:...@h/ p` |
+| c N2 | Fragments were printed in full (OAuth implicit-flow tokens) | A non-empty fragment shows as `#***`, like the query: `test_fragments_are_hidden_like_queries` (the anchor and the target of the report) |
+| c N3 | A pair subclass that lies about its length raised `IndexError` | `Link` reads each pair through the base `tuple` or `list` methods, so the check sees the real items and raises `TypeError`: `test_pairs_are_read_without_their_subclass_methods` |
+| e N08 | Survivor: `get` returned the last plain value | `test_get_and_title_return_the_first_of_repeated_plain_values` |
+| e N14 | Survivor: `rev` returned the last value | `test_rev_returns_the_first_rev` |
+| e N19 | Survivor: `media` preferred a starred twin | `test_raw_attributes_ignore_a_starred_twin` for `media`, `type`, `rev` and `hreflang` (the `type` and `hreflang` mutants are killed too) |
+| e N30 | Survivor: `quote_uri` dropped the fragment | `test_redacted_fragments_keep_their_mark`: the base `//h/#frag` and the target `/x y#frag` show `#***`, an empty fragment keeps its bare `#` |
+
+The CHANGELOG and the GUIDE describe the new redaction rule and the pair reading.
+
+Disputed findings: none.

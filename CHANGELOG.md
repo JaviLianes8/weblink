@@ -36,8 +36,13 @@ and follow Semantic Versioning.
   escapes), followed by its length, so a huge input never ends up whole in a log line.
 - `ExtValue`, `Link` and `LinkError` report `weblinking` as their module, so pickles and
   tracebacks never name a private module.
-- Error messages about a target, an anchor or a base URI show its userinfo and its query
-  as `***`, so credentials, tokens and signatures never reach a log line.
+- Error messages about a target, an anchor or a base URI hide its userinfo, its query and
+  its fragment as `***`, so credentials, tokens and signatures (an OAuth token in a
+  fragment too) never reach a log line. Everything before the last `@` and after the
+  first `?` or `#` is hidden whatever the value looks like, since it is invalid: a
+  password holding `#`, `?` or `/`, or a scheme typo such as `https//`, stays hidden.
+- `Link` reads each `(name, value)` pair through the base `tuple` or `list` methods, so a
+  subclass that misreports its length raises `TypeError` instead of `IndexError`.
 - Parameter names fold only their ASCII letters, in `Link`, `Link.get` and
   `Link.get_all`, as relation types already did. A name with a look-alike such as the
   Kelvin sign used to turn into an ASCII token that `build` then wrote.

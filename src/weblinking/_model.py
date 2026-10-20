@@ -42,10 +42,18 @@ class Link(_Access):
         items = params.items() if isinstance(params, Mapping) else params
         pairs = []
         for item in items:
-            if not isinstance(item, (tuple, list)) or len(item) != 2:
+            # The base type's own methods read a subclass, which may lie about its length.
+            if isinstance(item, tuple):
+                pair: tuple[object, ...] = tuple.__getitem__(item, slice(None))
+            elif isinstance(item, list):
+                copied: list[str] = list.copy(item)
+                pair = tuple(copied)
+            else:
+                pair = ()
+            if len(pair) != 2:
                 raise TypeError("each parameter must be a (name, value) pair")
-            name = need_str(item[0], "a parameter name")
-            pairs.append((ascii_lower(name), need_str(item[1], "a parameter value")))
+            name = need_str(pair[0], "a parameter name")
+            pairs.append((ascii_lower(name), need_str(pair[1], "a parameter value")))
         object.__setattr__(self, "_uri", uri)
         object.__setattr__(self, "_pairs", tuple(pairs))
 

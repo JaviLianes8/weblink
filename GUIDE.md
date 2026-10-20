@@ -170,8 +170,10 @@ print(is_registered("Next"), is_registered("openid2.local_id"), "preload" in REG
   `parse(..., strict=True)` and `None` elsewhere. Messages quote at most 80 characters of
   the offending text (fewer when it needs escapes) and then give its length, so a huge
   input never ends up whole in a log line. When the text is a target, an anchor or a
-  base URI, its userinfo and its query show as `***`, since credentials, tokens and
-  signatures travel there.
+  base URI, its userinfo, its query and its fragment show as `***`, since credentials,
+  tokens and signatures travel there. The value is invalid, so its parts are not trusted:
+  everything before the last `@` and everything after the first `?` or `#` is hidden,
+  keeping only a leading `scheme://`.
 - `TypeError` is raised for arguments of the wrong type: `bytes` instead of text, a name
   that is not a `str`, a `Link` where an iterable of links is expected, an item that is
   not a `Link`, and so on. Tolerant parsing never raises `LinkError`.
